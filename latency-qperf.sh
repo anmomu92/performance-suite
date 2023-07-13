@@ -3,7 +3,7 @@
 # Constants
 SERVER_IP=192.168.0.20
 CLIENT_IP=192.168.0.10
-TESTS=5
+TESTS=100
 
 # Variables
 success=0
@@ -15,6 +15,10 @@ avg_latency_tcp=0
 part_latency_udp=0
 total_latency_udp=0
 avg_latency_udp=0
+
+if [ -f "latency.txt" ]; then
+	rm latency.txt
+fi
 
 # We check that there is connectivity with the server
 ping -c 1 $SERVER_IP > /dev/null 2>&1 && success=1
@@ -44,14 +48,18 @@ then
 	echo "TCP - LATENCY"
 	echo "-------------"
 	avg_latency_tcp=$(echo "scale=3; $total_latency_tcp / $TESTS" | bc -l)
-	echo "The average transfer for TCP in $TESTS runs is $avg_latency_tcp us"
+	echo "The average latency for TCP in $TESTS runs is $avg_latency_tcp us"
+
+	echo "$avg_latency_tcp " >> latency.txt
 
 	# We calculate the average latency for UDP
 	echo "-------------"
 	echo "UDP - LATENCY"
 	echo "-------------"
 	avg_latency_udp=$(echo "scale=3; $total_latency_udp / $TESTS" | bc -l)
-	echo "The average transfer for TCP in $TESTS runs is $avg_latency_udp us"
+	echo "The average latency for UDP in $TESTS runs is $avg_latency_udp us"
+
+	echo "$avg_latency_udp " >> latency.txt
 
 else
 	echo "---------------------------------"

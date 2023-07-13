@@ -3,7 +3,7 @@
 # Constants
 SERVER_IP=192.168.0.20
 CLIENT_IP=192.168.0.10
-TESTS=100
+TESTS=20
 
 # Variables
 success=0
@@ -36,6 +36,10 @@ if [ -f "throughput.txt" ]; then
 	rm throughput.txt
 fi
 
+if [ -f "tcp.txt" ]; then
+	rm tcp.txt
+fi
+
 if [ -f "jitter.txt" ]; then
 	rm jitter.txt
 fi
@@ -54,6 +58,7 @@ iperf3 -c $SERVER_IP -B $CLIENT_IP -t 1 > /dev/null 2>&1 && ip3=1
 
 if [ $success -eq 1 ] && [ $ip3 -eq 1 ]
 then
+	: <<'END'
 # We run the TCP iperf3 test with the default options
 	for i in $(seq 1 $TESTS); do
 		# Transfer for TCP
@@ -80,11 +85,12 @@ then
 	echo "---------------------"
 	avg_transfer_tcp=$(echo "scale=3; $total_transfer_tcp / $TESTS" | bc -l)
 	echo "The average transfer for TCP in $TESTS runs is $avg_transfer_tcp $units_transfer_tcp"
+	echo "transfer $avg_transfer_tcp" >> tcp.txt
 
 	# We calculate the average transfered bytes and bitrate for TCP
 	avg_bitrate_tcp=$(echo "scale=3; $total_bitrate_tcp / $TESTS" | bc -l)
 	echo "The average bitrate for TCP in $TESTS runs is $avg_bitrate_tcp $units_bitrate_tcp"
-	echo ""
+	echo "bitrate $avg_bitrate_tcp" >> tcp.txt
 
 	total_transfer_tcp=0
 	total_bitrate_tcp=0
@@ -492,7 +498,7 @@ then
 	total_jitter_udp=0
 	part_loss_udp=0
 	total_loss_udp=0
-
+END
 # We run the UDP iperf3 test with an unlimited injection bitrate
 	for i in $(seq 1 $TESTS); do
 		# Transfer for UDP
