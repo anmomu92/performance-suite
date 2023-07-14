@@ -1,29 +1,22 @@
 #!/bin/bash
 
+# Test
+export TEST_NAME="netperf"
+
 # Constants
 SERVER_IP=192.168.0.20
 CLIENT_IP=192.168.0.10
-TESTS=1
 
 # Variables
 success=0
-ip3=0
+nperf=0
+export TEST_DURATION=10
+export TESTS=1
 
-part_transfer_tcp=0
-total_transfer_tcp=0
-avg_transfer_tcp=0
+netperf_part_bitrate_tcp=0
+netperf_total_bitrate_tcp=0
+netperf_avg_bitrate_tcp=0
 
-part_retransmissions_tcp=0
-total_retransmissions_tcp=0
-avg_retransmissions_tcp=0
-
-part_transfer_udp=0
-total_transfer_udp=0
-avg_transfer_udp=0
-
-part_bitrate_tcp=0
-total_bitrate_tcp=0
-avg_bitrate_tcp=0
 part_bitrate_udp=0
 total_bitrate_udp=0
 avg_bitrate_udp=0
@@ -36,80 +29,67 @@ part_loss_udp=0
 total_loss_udp=0
 avg_loss_udp=0
 
+# We create results directory if it doesn't exist
+if [ ! -d "../results/${TEST_NAME}" ]; then
+	mkdir -p ../results/${TEST_NAME}
+fi
+
+
 # We delete previous result files
-if [ -f "../results/iperf3/throughput.txt" ]; then
-	rm ../results/iperf3/throughput.txt
+if [ -f "../results/${TEST_NAME}/tcp-throughput.txt" ]; then
+	rm ../results/${TEST_NAME}/tcp-throughput.txt
 fi
 
-if [ -f "../results/iperf3/tcp.txt" ]; then
-	rm ../results/iperf3/tcp.txt
+if [ -f "../results/${TEST_NAME}/tcp.txt" ]; then
+	rm ../results/${TEST_NAME}/tcp.txt
 fi
 
-if [ -f "../results/iperf3/jitter.txt" ]; then
-	rm ../results/iperf3/jitter.txt
+if [ -f "../results/${TEST_NAME}iperf3/jitter.txt" ]; then
+	rm ../results/${TEST_NAME}/jitter.txt
 fi
 
-if [ -f "../results/iperf3/loss.txt" ]; then
-	rm ../results/iperf3/loss.txt
+if [ -f "../results/${TEST_NAME}iperf3/loss.txt" ]; then
+	rm ../results/${TEST_NAME}/loss.txt
 fi
 
-if [ -f "../results/iperf3/box-plot.txt" ]; then
-	rm ../results/iperf3/box-plot.txt
+if [ -f "../results/${TEST_NAME}iperf3/box-plot.txt" ]; then
+	rm ../results/${TEST_NAME}/box-plot.txt
 fi
 
 # We check that there is connectivity with the server
 ping -c 1 $SERVER_IP > /dev/null 2>&1 && success=1
-iperf3 -c $SERVER_IP -B $CLIENT_IP -t 1 > /dev/null 2>&1 && ip3=1
+netperf -H $SERVER_IP -l 1 -t TCP_STREAM > /dev/null 2>&1 && nperf=1
 
-if [ $success -eq 1 ] && [ $ip3 -eq 1 ]
+if [ $success -eq 1 ] && [ $nperf -eq 1 ]
 then
+
 #	: <<'END'
 # We run the TCP iperf3 test with the default options
 	for i in $(seq 1 $TESTS); do
-		# Transfer for TCP
-		result_tcp=$(iperf3 -c $SERVER_IP -B $CLIENT_IP -O1 -t11 -f m| grep receiver)
-		part_transfer_tcp=$(echo $result_tcp | awk '{print $5}')
-		units_transfer_tcp=$(echo $result_tcp | awk '{print $6}')
-		total_transfer_tcp=$(echo $total_transfer_tcp + $part_transfer_tcp | bc)
+		result_tcp=$(netperf -H $SERVER_IP -l ${TEST_DURATION} -t TCP_STREAM -f m | tail -1)
+
 
 		# Bitrate for TCP
-		part_bitrate_tcp=$(echo $result_tcp | awk '{print $7}')
-		units_bitrate_tcp=$(echo $result_tcp | awk '{print $8}')
-		total_bitrate_tcp=$(echo $total_bitrate_tcp + $part_bitrate_tcp | bc)
-		
-		# Retransmission for TCP
-		part_retransmissions_tcp=$(echo $result_tcp | awk '{print $9}')
-		total_retransmissions_tcp=$(echo $total_retransmissions_tcp + $part_retransmissions_tcp | bc)
+		netperf_part_bitrate_tcp=$(echo $result_tcp | awk '{print $5}')
+		netperf_total_bitrate_tcp=$(echo $netperf_total_bitrate_tcp + $netperf_part_bitrate_tcp | bc)
 
-
-		echo -n "$part_bitrate_tcp " >> ../results/iperf3/box-plot.txt
+		echo -n "$part_bitrate_tcp " >> ../results/${TEST_NAME}/box-plot.txt
 
 		if [ $i -eq $TESTS ]; then
-			echo "TCP" >> ../results/iperf3/box-plot.txt
+			echo "TCP" >> ../results/${TEST_NAME}/box-plot.txt
 		fi
 	done
 
-	# We calculate the average transfered bytes for TCP
 	echo "---------------------"
 	echo "TCP - DEFAULT OPTIONS"
 	echo "---------------------"
-	avg_transfer_tcp=$(echo "scale=3; $total_transfer_tcp / $TESTS" | bc -l)
-	echo "The average transfer for TCP in $TESTS runs is $avg_transfer_tcp $units_transfer_tcp"
-	echo "transfer $avg_transfer_tcp" >> ../results/iperf3/tcp.txt
 
-	# We calculate the average bitrate for TCP
-	avg_bitrate_tcp=$(echo "scale=3; $total_bitrate_tcp / $TESTS" | bc -l)
-	echo "The average bitrate for TCP in $TESTS runs is $avg_bitrate_tcp $units_bitrate_tcp"
-	echo "bitrate $avg_bitrate_tcp" >> ../results/iperf3/tcp.txt
+	# We calculate the average throughput for TCP
+	netperf_avg_bitrate_tcp=$(echo "scale=3; $netperf_total_bitrate_tcp / $TESTS" | bc -l)
+	echo "The average bitrate for TCP in $TESTS runs is $netperf_avg_bitrate_tcp Mbps"
+	echo "bitrate $netperf_avg_bitrate_tcp" >> ../results/${TEST_NAME}/tcp.txt
 
-	# We calculate the average bitrate for TCP
-	avg_retransmissions_tcp=$(echo "scale=3; $total_retransmissions_tcp / $TESTS" | bc -l)
-	echo "The average retransmissions for TCP in $TESTS runs is $avg_retransmissions_tcp"
-	echo "retransmissions $avg_retransmissions_tcp" >> ../results/iperf3/tcp.txt
-
-	total_transfer_tcp=0
-	total_bitrate_tcp=0
-	total_retransmissions_tcp=0
+	netperf_total_throughput_tcp=0
 
 # We run the UDP iperf3 test with an injection bitrate of 10 MB
 	for i in $(seq 1 $TESTS); do
@@ -574,12 +554,14 @@ then
 	part_loss_udp=0
 	total_loss_udp=0
 
+
+
 else
 	echo "---------------------------------"
-	echo "El servidor iperf3 no esta activo"
+	echo "El servidor netperf no esta activo"
 	echo "---------------------------------"
 	echo ""
-	echo "* Para activarlo ejecute el comando 'iperf3 -s -B <SERVER_IP>' en el servidor y asegurese de que hay conexion con ping"
+	echo "* Para activarlo ejecute el comando 'netperf' en el servidor y asegurese de que hay conexion con ping"
 	echo ""
 fi
 
