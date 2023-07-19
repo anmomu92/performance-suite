@@ -16,7 +16,7 @@ sudo apt install iperf3 netperf nuttcp
 ```
 ## Usage
 
-You just have to run the main script typing `./main.sh`. This script will prompt you with questions about which tests you want to launch, in case you just want to launch a specific tool.
+You just have to run the main script typing `./main.sh`. This script will prompt you with questions about which tests you want to launch, in case you just want to launch a specific tool. By now, you have to choose the tool with a 1 (yes) or a 0 (no)
 
 ## Contributing
 
