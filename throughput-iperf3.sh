@@ -1,91 +1,98 @@
 #!/bin/bash
 
 # Constants
-SERVER_IP=192.168.0.20
-CLIENT_IP=192.168.0.10
-TESTS=1
+export TEST_NAME=iperf3
+injection_bitrate=(100 500 1000 2000 3000 10000 0)
+packet_burst=(5 10 20 50 100 200)
+message_size=(1472 8972)
 
-# Variables
-success=0
+# Variables specific to this bash script
 ip3=0
 
-part_transfer_tcp=0
-total_transfer_tcp=0
-avg_transfer_tcp=0
+# We create results directory if it doesn't exist
+if [ ! -d "../results/${TEST_NAME}" ]; then
+	mkdir -p ../results/${TEST_NAME}
+fi
 
-part_retransmissions_tcp=0
-total_retransmissions_tcp=0
-avg_retransmissions_tcp=0
-
-part_transfer_udp=0
-total_transfer_udp=0
-avg_transfer_udp=0
-
-part_bitrate_tcp=0
-total_bitrate_tcp=0
-avg_bitrate_tcp=0
-part_bitrate_udp=0
-total_bitrate_udp=0
-avg_bitrate_udp=0
-
-part_jitter_udp=0
-total_jitter_udp=0
-avg_jitter_udp=0
-
-part_loss_udp=0
-total_loss_udp=0
-avg_loss_udp=0
+# We create logs directory if it doesn't exist
+if [ ! -d "../logs/${TEST_NAME}" ]; then
+	mkdir -p ../logs/${TEST_NAME}
+fi
 
 # We delete previous result files
-if [ -f "../results/iperf3/throughput.txt" ]; then
-	rm ../results/iperf3/throughput.txt
+if [ -f "../results/${TEST_NAME}/tcp-throughput.txt" ]; then
+	rm ../results/${TEST_NAME}/tcp-throughput.txt
 fi
 
-if [ -f "../results/iperf3/tcp.txt" ]; then
-	rm ../results/iperf3/tcp.txt
+if [ -f "../results/${TEST_NAME}/udp-transfer.txt" ]; then
+	rm ../results/${TEST_NAME}/udp-transfer.txt
 fi
 
-if [ -f "../results/iperf3/jitter.txt" ]; then
-	rm ../results/iperf3/jitter.txt
+
+if [ -f "../results/${TEST_NAME}/udp-throughput.txt" ]; then
+	rm ../results/${TEST_NAME}/udp-throughput.txt
 fi
 
-if [ -f "../results/iperf3/loss.txt" ]; then
-	rm ../results/iperf3/loss.txt
+if [ -f "../results/${TEST_NAME}/udp-jitter.txt" ]; then
+	rm ../results/${TEST_NAME}/udp-jitter.txt
 fi
 
-if [ -f "../results/iperf3/box-plot.txt" ]; then
-	rm ../results/iperf3/box-plot.txt
+if [ -f "../results/${TEST_NAME}/udp-loss.txt" ]; then
+	rm ../results/${TEST_NAME}/udp-loss.txt
 fi
 
-# We check that there is connectivity with the server
-ping -c 1 $SERVER_IP > /dev/null 2>&1 && success=1
+if [ -f "../results/${TEST_NAME}/box-plot.txt" ]; then
+	rm ../results/${TEST_NAME}/box-plot.txt
+fi
+
+# We delete previous log files
+if [ -f "../logs/${TEST_NAME}/tcp-log.txt" ]; then
+	rm ../logs/${TEST_NAME}/tcp-log.txt
+fi
+
+if [ -f "../logs/${TEST_NAME}/udp-log.txt" ]; then
+	rm ../logs/${TEST_NAME}/udp-log.txt
+fi
+
+
+# We check that the server is running iperf3
 iperf3 -c $SERVER_IP -B $CLIENT_IP -t 1 > /dev/null 2>&1 && ip3=1
 
-if [ $success -eq 1 ] && [ $ip3 -eq 1 ]
+if [ $ip3 -eq 1 ]
 then
-#	: <<'END'
-# We run the TCP iperf3 test with the default options
+
+  echo "----------------"
+	echo "| TCP - IPERF3 |"
+	echo "----------------"
+  
+  # We run the TCP iperf3 test with the default options
 	for i in $(seq 1 $TESTS); do
-		# Transfer for TCP
-		result_tcp=$(iperf3 -c $SERVER_IP -B $CLIENT_IP -O1 -t11 -f m| grep receiver)
-		part_transfer_tcp=$(echo $result_tcp | awk '{print $5}')
-		units_transfer_tcp=$(echo $result_tcp | awk '{print $6}')
+    
+    # We send the output to a log file
+    echo "iperf3 -c $SERVER_IP -B $CLIENT_IP -O1 -t${TEST_DURATION} -f m" >> ../logs/${TEST_NAME}/tcp-log.txt
+    iperf3 -c $SERVER_IP -B $CLIENT_IP -O1 -t${TEST_DURATION} -f m >> ../logs/${TEST_NAME}/tcp-log.txt
+		iperf3_result_tcp=$(tail -4 ../logs/${TEST_NAME}/tcp-log.txt | head -1)
+    echo "$iperf3_result_tcp"
+
+		# TCP transfer
+		part_transfer_tcp=$(echo $iperf3_result_tcp | awk '{print $5}')
+		units_transfer_tcp=$(echo $iperf3_result_tcp | awk '{print $6}')
 		total_transfer_tcp=$(echo $total_transfer_tcp + $part_transfer_tcp | bc)
 
-		# Bitrate for TCP
-		part_bitrate_tcp=$(echo $result_tcp | awk '{print $7}')
-		units_bitrate_tcp=$(echo $result_tcp | awk '{print $8}')
+		# TCP bitrate
+		part_bitrate_tcp=$(echo $iperf3_result_tcp | awk '{print $7}')
+		units_bitrate_tcp=$(echo $iperf3_result_tcp | awk '{print $8}')
 		total_bitrate_tcp=$(echo $total_bitrate_tcp + $part_bitrate_tcp | bc)
 		
-		# Retransmission for TCP
-		part_retransmissions_tcp=$(echo $result_tcp | awk '{print $9}')
+		# TCP retransmissions
+		part_retransmissions_tcp=$(echo $iperf3_result_tcp | awk '{print $9}')
 		total_retransmissions_tcp=$(echo $total_retransmissions_tcp + $part_retransmissions_tcp | bc)
 
-
-		echo -n "$part_bitrate_tcp " >> ../results/iperf3/box-plot.txt
+    # We add data to the boxplot text file
+		echo -n "$part_bitrate_tcp " >> ../results/${TEST_NAME}/box-plot.txt
 
 		if [ $i -eq $TESTS ]; then
-			echo "TCP" >> ../results/iperf3/box-plot.txt
+			echo "TCP" >> ../results/${TEST_NAME}/box-plot.txt
 		fi
 	done
 
@@ -95,491 +102,95 @@ then
 	echo "---------------------"
 	avg_transfer_tcp=$(echo "scale=3; $total_transfer_tcp / $TESTS" | bc -l)
 	echo "The average transfer for TCP in $TESTS runs is $avg_transfer_tcp $units_transfer_tcp"
-	echo "transfer $avg_transfer_tcp" >> ../results/iperf3/tcp.txt
+	echo "transfer $avg_transfer_tcp" >> ../results/${TEST_NAME}/tcp-throughput.txt
 
 	# We calculate the average bitrate for TCP
 	avg_bitrate_tcp=$(echo "scale=3; $total_bitrate_tcp / $TESTS" | bc -l)
 	echo "The average bitrate for TCP in $TESTS runs is $avg_bitrate_tcp $units_bitrate_tcp"
-	echo "bitrate $avg_bitrate_tcp" >> ../results/iperf3/tcp.txt
+	echo "bitrate $avg_bitrate_tcp" >> ../results/${TEST_NAME}/tcp-throughput.txt
 
 	# We calculate the average bitrate for TCP
 	avg_retransmissions_tcp=$(echo "scale=3; $total_retransmissions_tcp / $TESTS" | bc -l)
 	echo "The average retransmissions for TCP in $TESTS runs is $avg_retransmissions_tcp"
-	echo "retransmissions $avg_retransmissions_tcp" >> ../results/iperf3/tcp.txt
+	echo "retransmissions $avg_retransmissions_tcp" >> ../results/${TEST_NAME}/tcp-throughput.txt
 
 	total_transfer_tcp=0
 	total_bitrate_tcp=0
 	total_retransmissions_tcp=0
 
-# We run the UDP iperf3 test with an injection bitrate of 10 MB
-	for i in $(seq 1 $TESTS); do
-		# Transfer for UDP
-		result_udp=$(iperf3 -c $SERVER_IP -B $CLIENT_IP -u -b10M -O1 -t11 | grep receiver)
-		part_transfer_udp=$(echo $result_udp | awk '{print $5}')
-		units_transfer_udp=$(echo $result_udp | awk '{print $6}')
-		total_transfer_udp=$(echo $total_transfer_udp + $part_transfer_udp | bc)
 
-		# Bitrate for UDP
-		part_bitrate_udp=$(echo $result_udp | awk '{print $7}')
-		units_bitrate_udp=$(echo $result_udp | awk '{print $8}')
-		total_bitrate_udp=$(echo $total_bitrate_udp + $part_bitrate_udp | bc)
-
-		# Jitter for UDP
-		part_jitter_udp=$(echo $result_udp | awk '{print $9}')
-		units_jitter_udp=$(echo $result_udp | awk '{print $10}')
-		total_jitter_udp=$(echo $total_jitter_udp + $part_jitter_udp | bc)
-
-		# Datagram loss for UDP
-		part_loss_udp=$(echo $result_udp | awk '{print $12}')
-		part_loss_udp=$(echo $part_loss_udp | tr -d -c 0-9,\.)
-		total_loss_udp=$(echo $total_loss_udp + $part_loss_udp | bc)
-
-	done
-
-# We calculate the average transfered bytes, bitrate, jitter and datagram loss for UDP and an injection of 10MB
-	echo "------------------------------"
-	echo "UDP - DEFAULT OPTIONS AND 10MB"
-	echo "------------------------------"
-	avg_transfer_udp=$(echo "scale=3; $total_transfer_udp / $TESTS" | bc -l)
-	echo "The average transfer for UDP in $TESTS runs and 10MB is $avg_transfer_udp $units_transfer_udp"
-
-	# We calculate the average transfered bytes for TCP
-	avg_bitrate_udp=$(echo "scale=3; $total_bitrate_udp / $TESTS" | bc -l)
-	echo "The average bitrate for UDP in $TESTS runs and 10MB is $avg_bitrate_udp $units_bitratre_udp"
-
-	# We calculate the average transfered bytes for TCP
-	avg_jitter_udp=$(echo "scale=3; $total_jitter_udp / $TESTS" | bc -l)
-	echo "The average jitter for UDP in $TESTS runs and 10MB is $avg_jitter_udp $units_jitter_udp"
-
-	# We calculate the average transfered bytes for TCP
-	avg_loss_udp=$(echo "scale=3; $total_loss_udp / $TESTS" | bc -l)
-	echo "The average datagram loss for UDP in $TESTS runs and 10MB is $avg_loss_udp"
-
-	total_transfer_udp=0
-	total_bitrate_udp=0
-	total_jitter_udp=0
-	part_loss_udp=0
-	total_loss_udp=0
-
-# We run the UDP iperf3 test with an injection bitrate of 100 MB
-	for i in $(seq 1 $TESTS); do
-		# Transfer for UDP
-		result_udp=$(iperf3 -c $SERVER_IP -B $CLIENT_IP -u -b100M -O1 -t11 | grep receiver)
-		part_transfer_udp=$(echo $result_udp | awk '{print $5}')
-		units_transfer_udp=$(echo $result_udp | awk '{print $6}')
-		total_transfer_udp=$(echo $total_transfer_udp + $part_transfer_udp | bc)
-
-		# Bitrate for UDP
-		part_bitrate_udp=$(echo $result_udp | awk '{print $7}')
-		units_bitrate_udp=$(echo $result_udp | awk '{print $8}')
-		total_bitrate_udp=$(echo $total_bitrate_udp + $part_bitrate_udp | bc)
-
-		# Jitter for UDP
-		part_jitter_udp=$(echo $result_udp | awk '{print $9}')
-		units_jitter_udp=$(echo $result_udp | awk '{print $10}')
-		total_jitter_udp=$(echo $total_jitter_udp + $part_jitter_udp | bc)
-
-		# Datagram loss for UDP
-		part_loss_udp=$(echo $result_udp | awk '{print $12}')
-		part_loss_udp=$(echo $part_loss_udp | tr -d -c 0-9,\.)
-		total_loss_udp=$(echo $total_loss_udp + $part_loss_udp | bc)
-
-		echo -n "$part_bitrate_udp " >> ../results/iperf3/box-plot.txt
-
-		if [ $i -eq $TESTS ]; then
-			echo "100" >> ../results/iperf3/box-plot.txt
-		fi
-
-	done
-
-	# We calculate the average transfered bytes, bitrate, jitter and datagram loss for UDP and an injection of 100MB
-	echo "----------------------------------------------------"
-	echo "UDP - DEFAULT OPTIONS AND INJECTION BITRATE OF 100MB"
-	echo "----------------------------------------------------"
-	avg_transfer_udp=$(echo "scale=3; $total_transfer_udp / $TESTS" | bc -l)
-	echo "The average transfer for UDP in $TESTS runs and 100MB is $avg_transfer_udp $units_transfer_udp"
-
-	# We calculate the average transfered bytes for TCP
-	avg_bitrate_udp=$(echo "scale=3; $total_bitrate_udp / $TESTS" | bc -l)
-	echo "The average bitrate for UDP in $TESTS runs and 100MB is $avg_bitrate_udp $units_bitrate_udp"
-	echo "100 $avg_bitrate_udp" >> ../results/iperf3/throughput.txt
-
-	# We calculate the average transfered bytes for TCP
-	avg_jitter_udp=$(echo "scale=3; $total_jitter_udp / $TESTS" | bc -l)
-	echo "The average jitter for UDP in $TESTS runs and 100MB is $avg_jitter_udp $units_jitter_udp"
-	echo "100 $avg_jitter_udp" >> ../results/iperf3/jitter.txt
-
-	# We calculate the average transfered bytes for TCP
-	avg_loss_udp=$(echo "scale=3; $total_loss_udp / $TESTS" | bc -l)
-	echo "The average datagram loss for UDP in $TESTS runs and 100MB is $avg_loss_udp"
-	echo "100 $avg_loss_udp" >> ../results/iperf3/loss.txt
-
-	total_transfer_udp=0
-	total_bitrate_udp=0
-	total_jitter_udp=0
-	part_loss_udp=0
-	total_loss_udp=0
-
-# We run the UDP iperf3 test with an injection bitrate of 500 MB
-	for i in $(seq 1 $TESTS); do
-		# Transfer for UDP
-		result_udp=$(iperf3 -c $SERVER_IP -B $CLIENT_IP -u -b500M -O1 -t11 | grep receiver)
-		part_transfer_udp=$(echo $result_udp | awk '{print $5}')
-		units_transfer_udp=$(echo $result_udp | awk '{print $6}')
-		total_transfer_udp=$(echo $total_transfer_udp + $part_transfer_udp | bc)
-
-		# Bitrate for UDP
-		part_bitrate_udp=$(echo $result_udp | awk '{print $7}')
-		units_bitrate_udp=$(echo $result_udp | awk '{print $8}')
-		total_bitrate_udp=$(echo $total_bitrate_udp + $part_bitrate_udp | bc)
-
-		# Jitter for UDP
-		part_jitter_udp=$(echo $result_udp | awk '{print $9}')
-		units_jitter_udp=$(echo $result_udp | awk '{print $10}')
-		total_jitter_udp=$(echo $total_jitter_udp + $part_jitter_udp | bc)
-
-		# Datagram loss for UDP
-		part_loss_udp=$(echo $result_udp | awk '{print $12}')
-		part_loss_udp=$(echo $part_loss_udp | tr -d -c 0-9,\.)
-		total_loss_udp=$(echo $total_loss_udp + $part_loss_udp | bc)
-
-		echo -n "$part_bitrate_udp " >> ../results/iperf3/box-plot.txt
-
-		if [ $i -eq $TESTS ]; then
-			echo "500" >> ../results/iperf3/box-plot.txt
-		fi
-
-	done
-
-	# We calculate the average transfered bytes, bitrate, jitter and datagram loss for UDP and an injection of 500MB
-	echo "----------------------------------------------------"
-	echo "UDP - DEFAULT OPTIONS AND INJECTION BITRATE OF 500MB"
-	echo "----------------------------------------------------"
-	avg_transfer_udp=$(echo "scale=3; $total_transfer_udp / $TESTS" | bc -l)
-	echo "The average transfer for UDP in $TESTS runs and 500MB is $avg_transfer_udp $units_transfer_udp"
-
-	# We calculate the average transfered bytes for TCP
-	avg_bitrate_udp=$(echo "scale=3; $total_bitrate_udp / $TESTS" | bc -l)
-	echo "The average bitrate for UDP in $TESTS runs and 500MB is $avg_bitrate_udp $units_bitrate_udp"
-	echo "500 $avg_bitrate_udp" >> ../results/iperf3/throughput.txt
-
-	# We calculate the average transfered bytes for TCP
-	avg_jitter_udp=$(echo "scale=3; $total_jitter_udp / $TESTS" | bc -l)
-	echo "The average jitter for UDP in $TESTS runs and 500MB is $avg_jitter_udp $units_jitter_udp"
-	echo "500 $avg_jitter_udp" >> ../results/iperf3/jitter.txt
-
-	# We calculate the average transfered bytes for TCP
-	avg_loss_udp=$(echo "scale=3; $total_loss_udp / $TESTS" | bc -l)
-	echo "The average datagram loss for UDP in $TESTS runs and 500MB is $avg_loss_udp"
-	echo "500 $avg_loss_udp" >> ../results/iperf3/loss.txt
-
-	total_transfer_udp=0
-	total_bitrate_udp=0
-	total_jitter_udp=0
-	part_loss_udp=0
-	total_loss_udp=0
-
-# We run the UDP iperf3 test with an injection bitrate of 1000 MB
-	for i in $(seq 1 $TESTS); do
-		# Transfer for UDP
-		result_udp=$(iperf3 -c $SERVER_IP -B $CLIENT_IP -u -b1000M -O1 -t11 -f m | grep receiver)
-		part_transfer_udp=$(echo $result_udp | awk '{print $5}')
-		units_transfer_udp=$(echo $result_udp | awk '{print $6}')
-		total_transfer_udp=$(echo $total_transfer_udp + $part_transfer_udp | bc)
-
-		# Bitrate for UDP
-		part_bitrate_udp=$(echo $result_udp | awk '{print $7}')
-		units_bitrate_udp=$(echo $result_udp | awk '{print $8}')
-		total_bitrate_udp=$(echo $total_bitrate_udp + $part_bitrate_udp | bc)
-
-		# Jitter for UDP
-		part_jitter_udp=$(echo $result_udp | awk '{print $9}')
-		units_jitter_udp=$(echo $result_udp | awk '{print $10}')
-		total_jitter_udp=$(echo $total_jitter_udp + $part_jitter_udp | bc)
-
-		# Datagram loss for UDP
-		part_loss_udp=$(echo $result_udp | awk '{print $12}')
-		part_loss_udp=$(echo $part_loss_udp | tr -d -c 0-9,\.)
-		total_loss_udp=$(echo $total_loss_udp + $part_loss_udp | bc)
-
-		echo -n "$part_bitrate_udp " >> ../results/iperf3/box-plot.txt
-
-		if [ $i -eq $TESTS ]; then
-			echo "1000" >> ../results/iperf3/box-plot.txt
-		fi
-
-	done
-
-	# We calculate the average transfered bytes, bitrate, jitter and datagram loss for UDP and an injection of 1000MB
-	echo "-----------------------------------------------------"
-	echo "UDP - DEFAULT OPTIONS AND INJECTION BITRATE OF 1000MB"
-	echo "-----------------------------------------------------"
-	avg_transfer_udp=$(echo "scale=3; $total_transfer_udp / $TESTS" | bc -l)
-	echo "The average transfer for UDP in $TESTS runs and 1000MB is $avg_transfer_udp $units_transfer_udp"
-
-	# We calculate the average transfered bytes for TCP
-	avg_bitrate_udp=$(echo "scale=3; $total_bitrate_udp / $TESTS" | bc -l)
-	echo "The average bitrate for UDP in $TESTS runs and 1000MB is $avg_bitrate_udp $units_bitrate_udp"
-	echo "1000 $avg_bitrate_udp" >> ../results/iperf3/throughput.txt
-
-	# We calculate the average transfered bytes for TCP
-	avg_jitter_udp=$(echo "scale=3; $total_jitter_udp / $TESTS" | bc -l)
-	echo "The average jitter for UDP in $TESTS runs and 1000MB is $avg_jitter_udp $units_jitter_udp"
-	echo "1000 $avg_jitter_udp" >> ../results/iperf3/jitter.txt
-
-	# We calculate the average transfered bytes for TCP
-	avg_loss_udp=$(echo "scale=3; $total_loss_udp / $TESTS" | bc -l)
-	echo "The average datagram loss for UDP in $TESTS runs and 1000MB is $avg_loss_udp"
-	echo "1000 $avg_loss_udp" >> ../results/iperf3/loss.txt
-
-	total_transfer_udp=0
-	total_bitrate_udp=0
-	total_jitter_udp=0
-	part_loss_udp=0
-	total_loss_udp=0
-
-# We run the UDP iperf3 test with an injection bitrate of 2000 MB
-	for i in $(seq 1 $TESTS); do
-		# Transfer for UDP
-		result_udp=$(iperf3 -c $SERVER_IP -B $CLIENT_IP -u -b2000M -O1 -t11 -f m | grep receiver)
-		part_transfer_udp=$(echo $result_udp | awk '{print $5}')
-		units_transfer_udp=$(echo $result_udp | awk '{print $6}')
-		total_transfer_udp=$(echo $total_transfer_udp + $part_transfer_udp | bc)
-
-		# Bitrate for UDP
-		part_bitrate_udp=$(echo $result_udp | awk '{print $7}')
-		units_bitrate_udp=$(echo $result_udp | awk '{print $8}')
-		total_bitrate_udp=$(echo $total_bitrate_udp + $part_bitrate_udp | bc)
-
-		# Jitter for UDP
-		part_jitter_udp=$(echo $result_udp | awk '{print $9}')
-		units_jitter_udp=$(echo $result_udp | awk '{print $10}')
-		total_jitter_udp=$(echo $total_jitter_udp + $part_jitter_udp | bc)
-
-		# Datagram loss for UDP
-		part_loss_udp=$(echo $result_udp | awk '{print $12}')
-		part_loss_udp=$(echo $part_loss_udp | tr -d -c 0-9,\.)
-		total_loss_udp=$(echo $total_loss_udp + $part_loss_udp | bc)
-
-		echo -n "$part_bitrate_udp " >> ../results/iperf3/box-plot.txt
-
-		if [ $i -eq $TESTS ]; then
-			echo "2000" >> ../results/iperf3/box-plot.txt
-		fi
-
-	done
-
-	# We calculate the average transfered bytes, bitrate, jitter and datagram loss for UDP and an injection of 2000MB
-	echo "-----------------------------------------------------"
-	echo "UDP - DEFAULT OPTIONS AND INJECTION BITRATE OF 2000MB"
-	echo "-----------------------------------------------------"
-	avg_transfer_udp=$(echo "scale=3; $total_transfer_udp / $TESTS" | bc -l)
-	echo "The average transfer for UDP in $TESTS runs and 2000MB is $avg_transfer_udp $units_transfer_udp"
-
-	# We calculate the average transfered bytes for TCP
-	avg_bitrate_udp=$(echo "scale=3; $total_bitrate_udp / $TESTS" | bc -l)
-	echo "The average bitrate for UDP in $TESTS runs and 2000MB is $avg_bitrate_udp $units_bitrate_udp"
-	echo "2000 $avg_bitrate_udp" >> ../results/iperf3/throughput.txt
-
-	# We calculate the average transfered bytes for TCP
-	avg_jitter_udp=$(echo "scale=3; $total_jitter_udp / $TESTS" | bc -l)
-	echo "The average jitter for UDP in $TESTS runs and 2000MB is $avg_jitter_udp $units_jitter_udp"
-	echo "2000 $avg_jitter_udp" >> ../results/iperf3/jitter.txt
-
-	# We calculate the average transfered bytes for TCP
-	avg_loss_udp=$(echo "scale=3; $total_loss_udp / $TESTS" | bc -l)
-	echo "The average datagram loss for UDP in $TESTS runs and 2000MB is $avg_loss_udp"
-	echo "2000 $avg_loss_udp" >> ../results/iperf3/loss.txt
-
-	total_transfer_udp=0
-	total_bitrate_udp=0
-	total_jitter_udp=0
-	part_loss_udp=0
-	total_loss_udp=0
-
-# We run the UDP iperf3 test with an injection bitrate of 3000 MB
-	for i in $(seq 1 $TESTS); do
-		# Transfer for UDP
-		result_udp=$(iperf3 -c $SERVER_IP -B $CLIENT_IP -u -b3000M -O1 -t11 -f m | grep receiver)
-		part_transfer_udp=$(echo $result_udp | awk '{print $5}')
-		units_transfer_udp=$(echo $result_udp | awk '{print $6}')
-		total_transfer_udp=$(echo $total_transfer_udp + $part_transfer_udp | bc)
-
-		# Bitrate for UDP
-		part_bitrate_udp=$(echo $result_udp | awk '{print $7}')
-		units_bitrate_udp=$(echo $result_udp | awk '{print $8}')
-		total_bitrate_udp=$(echo $total_bitrate_udp + $part_bitrate_udp | bc)
-
-		# Jitter for UDP
-		part_jitter_udp=$(echo $result_udp | awk '{print $9}')
-		units_jitter_udp=$(echo $result_udp | awk '{print $10}')
-		total_jitter_udp=$(echo $total_jitter_udp + $part_jitter_udp | bc)
-
-		# Datagram loss for UDP
-		part_loss_udp=$(echo $result_udp | awk '{print $12}')
-		part_loss_udp=$(echo $part_loss_udp | tr -d -c 0-9,\.)
-		total_loss_udp=$(echo $total_loss_udp + $part_loss_udp | bc)
-
-		echo -n "$part_bitrate_udp " >> ../results/iperf3/box-plot.txt
-
-		if [ $i -eq $TESTS ]; then
-			echo "3000" >> ../results/iperf3/box-plot.txt
-		fi
-
-	done
-
-	# We calculate the average transfered bytes, bitrate, jitter and datagram loss for UDP and an injection of 3000MB
-	echo "-----------------------------------------------------"
-	echo "UDP - DEFAULT OPTIONS AND INJECTION BITRATE OF 3000MB"
-	echo "-----------------------------------------------------"
-	avg_transfer_udp=$(echo "scale=3; $total_transfer_udp / $TESTS" | bc -l)
-	echo "The average transfer for UDP in $TESTS runs and 3000MB is $avg_transfer_udp $units_transfer_udp"
-
-	# We calculate the average transfered bytes for TCP
-	avg_bitrate_udp=$(echo "scale=3; $total_bitrate_udp / $TESTS" | bc -l)
-	echo "The average bitrate for UDP in $TESTS runs and 3000MB is $avg_bitrate_udp $units_bitrate_udp"
-	echo "3000 $avg_bitrate_udp" >> ../results/iperf3/throughput.txt
-
-	# We calculate the average transfered bytes for TCP
-	avg_jitter_udp=$(echo "scale=3; $total_jitter_udp / $TESTS" | bc -l)
-	echo "The average jitter for UDP in $TESTS runs and 3000MB is $avg_jitter_udp $units_jitter_udp"
-	echo "3000 $avg_jitter_udp" >> ../results/iperf3/jitter.txt
-
-	# We calculate the average transfered bytes for TCP
-	avg_loss_udp=$(echo "scale=3; $total_loss_udp / $TESTS" | bc -l)
-	echo "The average datagram loss for UDP in $TESTS runs and 3000MB is $avg_loss_udp"
-	echo "3000 $avg_loss_udp" >> ../results/iperf3/loss.txt
-
-	total_transfer_udp=0
-	total_bitrate_udp=0
-	total_jitter_udp=0
-	part_loss_udp=0
-	total_loss_udp=0
-
-# We run the UDP iperf3 test with an injection bitrate of 10 GB
-	for i in $(seq 1 $TESTS); do
-		# Transfer for UDP
-		result_udp=$(iperf3 -c $SERVER_IP -B $CLIENT_IP -u -b10G -O1 -t11 -f m | grep receiver)
-		part_transfer_udp=$(echo $result_udp | awk '{print $5}')
-		units_transfer_udp=$(echo $result_udp | awk '{print $6}')
-		total_transfer_udp=$(echo $total_transfer_udp + $part_transfer_udp | bc)
-
-		# Bitrate for UDP
-		part_bitrate_udp=$(echo $result_udp | awk '{print $7}')
-		units_bitrate_udp=$(echo $result_udp | awk '{print $8}')
-		total_bitrate_udp=$(echo $total_bitrate_udp + $part_bitrate_udp | bc)
-
-		# Jitter for UDP
-		part_jitter_udp=$(echo $result_udp | awk '{print $9}')
-		units_jitter_udp=$(echo $result_udp | awk '{print $10}')
-		total_jitter_udp=$(echo $total_jitter_udp + $part_jitter_udp | bc)
-
-		# Datagram loss for UDP
-		part_loss_udp=$(echo $result_udp | awk '{print $12}')
-		part_loss_udp=$(echo $part_loss_udp | tr -d -c 0-9,\.)
-		total_loss_udp=$(echo $total_loss_udp + $part_loss_udp | bc)
-
-		echo -n "$part_bitrate_udp " >> ../results/iperf3/box-plot.txt
-
-		if [ $i -eq $TESTS ]; then
-			echo "10000" >> ../results/iperf3/box-plot.txt
-		fi
-
-	done
-
-	# We calculate the average transfered bytes, bitrate, jitter and datagram loss for UDP and an injection of 10GB
-	echo "---------------------------------------------------"
-	echo "UDP - DEFAULT OPTIONS AND INJECTION BITRATE OF 10GB"
-	echo "---------------------------------------------------"
-	avg_transfer_udp=$(echo "scale=3; $total_transfer_udp / $TESTS" | bc -l)
-	echo "The average transfer for UDP in $TESTS runs and 10GB is $avg_transfer_udp $units_transfer_udp"
-
-	# We calculate the average transfered bytes for TCP
-	avg_bitrate_udp=$(echo "scale=3; $total_bitrate_udp / $TESTS" | bc -l)
-	echo "The average bitrate for UDP in $TESTS runs and 10GB is $avg_bitrate_udp $units_bitrate_udp"
-	echo "10000 $avg_bitrate_udp" >> ../results/iperf3/throughput.txt
-
-	# We calculate the average transfered bytes for TCP
-	avg_jitter_udp=$(echo "scale=3; $total_jitter_udp / $TESTS" | bc -l)
-	echo "The average jitter for UDP in $TESTS runs and 10GB is $avg_jitter_udp $units_jitter_udp"
-	echo "10000 $avg_jitter_udp" >> ../results/iperf3/jitter.txt
-
-	# We calculate the average transfered bytes for TCP
-	avg_loss_udp=$(echo "scale=3; $total_loss_udp / $TESTS" | bc -l)
-	echo "The average datagram loss for UDP in $TESTS runs and 10GB is $avg_loss_udp"
-	echo "10000 $avg_loss_udp" >> ../results/iperf3/loss.txt
-
-	total_transfer_udp=0
-	total_bitrate_udp=0
-	total_jitter_udp=0
-	part_loss_udp=0
-	total_loss_udp=0
-#END
-# We run the UDP iperf3 test with an unlimited injection bitrate
-	for i in $(seq 1 $TESTS); do
-		# Transfer for UDP
-		result_udp=$(iperf3 -c $SERVER_IP -B $CLIENT_IP -u -b0 -O1 -t11 -f m | grep receiver)
-		part_transfer_udp=$(echo $result_udp | awk '{print $5}')
-		units_transfer_udp=$(echo $result_udp | awk '{print $6}')
-		total_transfer_udp=$(echo $total_transfer_udp + $part_transfer_udp | bc)
-
-		# Bitrate for UDP
-		part_bitrate_udp=$(echo $result_udp | awk '{print $7}')
-		units_bitrate_udp=$(echo $result_udp | awk '{print $8}')
-		total_bitrate_udp=$(echo $total_bitrate_udp + $part_bitrate_udp | bc)
-
-		# Jitter for UDP
-		part_jitter_udp=$(echo $result_udp | awk '{print $9}')
-		units_jitter_udp=$(echo $result_udp | awk '{print $10}')
-		total_jitter_udp=$(echo $total_jitter_udp + $part_jitter_udp | bc)
-
-		# Datagram loss for UDP
-		part_loss_udp=$(echo $result_udp | awk '{print $12}')
-		part_loss_udp=$(echo $part_loss_udp | tr -d -c 0-9,\.)
-		total_loss_udp=$(echo $total_loss_udp + $part_loss_udp | bc)
-
-		echo -n "$part_bitrate_udp " >> ../results/iperf3/box-plot.txt
-
-		if [ $i -eq $TESTS ]; then
-			echo "99999" >> ../results/iperf3/box-plot.txt
-		fi
-
-	done
-
-	# We calculate the average transfered bytes, bitrate, jitter and datagram loss for UDP and an unlimited injection
-	echo "-----------------------------------------------------"
-	echo "UDP - DEFAULT OPTIONS AND UNLIMITED INJECTION BITRATE"
-	echo "-----------------------------------------------------"
-	avg_transfer_udp=$(echo "scale=3; $total_transfer_udp / $TESTS" | bc -l)
-	echo "The average transfer for UDP in $TESTS runs and unlimited is $avg_transfer_udp $units_transfer_udp"
-
-	# We calculate the average transfered bytes for TCP
-	avg_bitrate_udp=$(echo "scale=3; $total_bitrate_udp / $TESTS" | bc -l)
-	echo "The average bitrate for UDP in $TESTS runs and unlimited is $avg_bitrate_udp $units_bitrate_udp"
-	echo "99999 $avg_bitrate_udp" >> ../results/iperf3/throughput.txt
-
-	# We calculate the average transfered bytes for TCP
-	avg_jitter_udp=$(echo "scale=3; $total_jitter_udp / $TESTS" | bc -l)
-	echo "The average jitter for UDP in $TESTS runs and unlimited is $avg_jitter_udp $units_jitter_udp"
-	echo "99999 $avg_jitter_udp" >> ../results/iperf3/jitter.txt
-
-	# We calculate the average transfered bytes for TCP
-	avg_loss_udp=$(echo "scale=3; $total_loss_udp / $TESTS" | bc -l)
-	echo "The average datagram loss for UDP in $TESTS runs and unlimited is $avg_loss_udp"
-	echo "99999 $avg_loss_udp" >> ../results/iperf3/loss.txt
-
-	total_transfer_udp=0
-	total_bitrate_udp=0
-	total_jitter_udp=0
-	part_loss_udp=0
-	total_loss_udp=0
+  echo "----------------"
+	echo "| UDP - IPERF3 |"
+	echo "----------------"
+  
+  # We run the UDP iperf3 varying the injection bitrate
+  for bitrate in "${injection_bitrate[@]}"; do 
+    for i in $(seq 1 $TESTS); do
+      echo "RUN: $i - INJ BITRATE: $bitrate"
+      echo "RUN: $i - INJ BITRATE: $bitrate" >> ../logs/${TEST_NAME}/udp-log.txt
+
+      # We save the output as a log file
+      echo "iperf3 -c $SERVER_IP -B $CLIENT_IP -u -b${bitrate}M -O1 -t${TEST_DURATION}" >> ../logs/${TEST_NAME}/udp-log.txt
+      iperf3 -c $SERVER_IP -B $CLIENT_IP -u -b${bitrate}M -O1 -t${TEST_DURATION} >> ../logs/${TEST_NAME}/udp-log.txt
+
+      # We get the relevant line from the output
+      iperf3_result_udp=$(tail -4 ../logs/${TEST_NAME}/udp-log.txt | head -1)
+
+      # UDP transfer
+      part_transfer_udp=$(echo $iperf3_result_udp | awk '{print $5}')
+      units_transfer_udp=$(echo $iperf3_result_udp | awk '{print $6}')
+      total_transfer_udp=$(echo $total_transfer_udp + $part_transfer_udp | bc)
+
+      # UDP bitrate
+      part_bitrate_udp=$(echo $iperf3_result_udp | awk '{print $7}')
+      units_bitrate_udp=$(echo $iperf3_result_udp | awk '{print $8}')
+      total_bitrate_udp=$(echo $total_bitrate_udp + $part_bitrate_udp | bc)
+
+      # UDP jitter
+      part_jitter_udp=$(echo $iperf3_result_udp | awk '{print $9}')
+      units_jitter_udp=$(echo $iperf3_result_udp | awk '{print $10}')
+      total_jitter_udp=$(echo $total_jitter_udp + $part_jitter_udp | bc)
+
+      # UDP datagram loss
+      part_loss_udp=$(echo $iperf3_result_udp | awk '{print $12}')
+      part_loss_udp=$(echo $part_loss_udp | tr -d -c 0-9,\.)
+      total_loss_udp=$(echo $total_loss_udp + $part_loss_udp | bc)
+
+    done
+
+    # We calculate the average UDP transfer
+    avg_transfer_udp=$(echo "scale=3; $total_transfer_udp / $TESTS" | bc -l)
+    echo "The average transfer for UDP in $TESTS runs and injection bitrate of $bitrate Mbps is $avg_transfer_udp $units_transfer_udp"
+    echo "$size $avg_transfer_udp" >> ../results/${TEST_NAME}/udp-transfer.txt
+
+    # We calculate the average UDP bitrate 
+    avg_bitrate_udp=$(echo "scale=3; $total_bitrate_udp / $TESTS" | bc -l)
+    echo "The average bitrate for UDP in $TESTS runs and injection bitrate of $bitrate is $avg_bitrate_udp $units_bitratre_udp"
+    echo "$size $avg_bitrate_udp" >> ../results/${TEST_NAME}/udp-throughput.txt
+
+    # We calculate the average UDP jitter
+    avg_jitter_udp=$(echo "scale=3; $total_jitter_udp / $TESTS" | bc -l)
+    echo "The average jitter for UDP in $TESTS runs and injection bitrate of $bitrate is $avg_jitter_udp $units_jitter_udp"
+    echo "$size $avg_jitter_udp" >> ../results/${TEST_NAME}/udp-jitter.txt
+
+    # We calculate the average UDP datagram loss
+    avg_loss_udp=$(echo "scale=3; $total_loss_udp / $TESTS" | bc -l)
+    echo "The average datagram loss for UDP in $TESTS runs and injection bitrate of $bitrate is $avg_loss_udp %"
+    echo "$size $avg_loss_udp" >> ../results/${TEST_NAME}/udp-loss.txt
+
+    total_transfer_udp=0
+    total_bitrate_udp=0
+    total_jitter_udp=0
+    part_loss_udp=0
+    total_loss_udp=0
+  done
 
 else
 	echo "---------------------------------"
 	echo "El servidor iperf3 no esta activo"
 	echo "---------------------------------"
 	echo ""
-	echo "* Para activarlo ejecute el comando 'iperf3 -s -B <SERVER_IP>' en el servidor y asegurese de que hay conexion con ping"
+	echo "* Para activarlo ejecute el comando 'iperf3 -s -B <SERVER_IP>' en el servidor"
 	echo ""
 fi
 
