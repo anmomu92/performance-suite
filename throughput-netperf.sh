@@ -164,7 +164,7 @@ else
 	echo "El servidor netperf no esta activo"
 	echo "---------------------------------"
 	echo ""
-	echo "* Para activarlo ejecute el comando 'netperf' en el servidor y asegurese de que hay conexion con ping"
+	echo "* Para activarlo ejecute el comando 'netserver' en el servidor y asegurese de que hay conexion con ping"
 	echo ""
 fi
 
