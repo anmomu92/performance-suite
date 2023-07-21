@@ -26,7 +26,7 @@ echo "------------------------ NETPERF ------------------------"
 #ping -c 1 $SERVER_IP > /dev/null 2>&1 && success=1
 netperf -H $SERVER_IP -l 1 -t TCP_STREAM > /dev/null 2>&1 && nperf=1
 
-if [ $success -eq 1 ] && [ $nperf -eq 1 ]
+if [ $nperf -eq 1 ]
 then
 
 for buffer in "${buffer_size[@]}"; do
