@@ -20,6 +20,8 @@ if [ ! -d "../logs/${TEST_NAME}" ]; then
 	mkdir -p ../logs/${TEST_NAME}
 fi
 
+# We show the test name
+echo "------------------------ IPERF3 ------------------------"
 
 # We check that the server is running iperf3
 iperf3 -c $SERVER_IP -B $CLIENT_IP -t 1 > /dev/null 2>&1 && ip3=1

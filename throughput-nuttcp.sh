@@ -47,6 +47,8 @@ if [ ! -d "../logs/${TEST_NAME}" ]; then
 	mkdir -p ../logs/${TEST_NAME}
 fi
 
+# We show the test name
+echo "------------------------ NUTTCP ------------------------"
 
 # We check that there is connectivity with the server
 #ping -c 1 $SERVER_IP > /dev/null 2>&1 && success=1

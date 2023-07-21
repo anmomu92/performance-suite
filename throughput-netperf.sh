@@ -38,9 +38,11 @@ avg_loss_udp=0
 		mkdir -p ../logs/${TEST_NAME}
 	fi
 
+# We show the test name
+echo "------------------------ NETPERF ------------------------"
 
 # We check that there is connectivity with the server
-ping -c 1 $SERVER_IP > /dev/null 2>&1 && success=1
+#ping -c 1 $SERVER_IP > /dev/null 2>&1 && success=1
 netperf -H $SERVER_IP -l 1 -t TCP_STREAM > /dev/null 2>&1 && nperf=1
 
 if [ $success -eq 1 ] && [ $nperf -eq 1 ]
