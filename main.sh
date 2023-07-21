@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Constants
-export SERVER_IP=127.0.0.1
-export CLIENT_IP=192.168.0.34
+export SERVER_IP=192.168.0.20
+export CLIENT_IP=192.168.0.10
 export TESTS=1
 export TEST_DURATION=10
 

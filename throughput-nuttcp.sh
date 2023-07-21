@@ -4,15 +4,16 @@
 export TEST_NAME="nuttcp"
 
 # Constants
-SERVER_IP=127.0.0.1
-CLIENT_IP=192.168.0.10
+#SERVER_IP=192.168.0.20
+#CLIENT_IP=192.168.0.10
 
 # Variables
 success=0
 nuttcp=0
 injection_bitrate=(100 500 1000 2000 3000 10000 0)
 packet_burst=(5 10 20 50 100 200)
-message_size=(1472 8972)
+message_size=(1448 8972)
+buffer_size=(212992 157286400)
 export TEST_DURATION=10
 export TESTS=2
 
@@ -47,46 +48,70 @@ if [ ! -d "../logs/${TEST_NAME}" ]; then
 fi
 
 
-# We delete previous result files
-if [ -f "../results/${TEST_NAME}/tcp-throughput.txt" ]; then
-	rm ../results/${TEST_NAME}/tcp-throughput.txt
-fi
-
-if [ -f "../results/${TEST_NAME}/tcp-retransmissions.txt" ]; then
-	rm ../results/${TEST_NAME}/tcp-retransmissions.txt
-fi
-
-if [ -f "../results/${TEST_NAME}/tcp-latency.txt" ]; then
-	rm ../results/${TEST_NAME}/tcp-latency.txt
-fi
-
-if [ -f "../results/${TEST_NAME}/udp-throughput.txt" ]; then
-	rm ../results/${TEST_NAME}/udp-throughput.txt
-fi
-
-if [ -f "../results/${TEST_NAME}/udp-error.txt" ]; then
-	rm ../results/${TEST_NAME}/udp-error.txt
-fi
-
-if [ -f "../results/${TEST_NAME}/box-plot.txt" ]; then
-	rm ../results/${TEST_NAME}/box-plot.txt
-fi
-
-# We delete previous log files
-if [ -f "../logs/${TEST_NAME}/tcp-log.txt" ]; then
-	rm ../logs/${TEST_NAME}/tcp-log.txt
-fi
-
-if [ -f "../logs/${TEST_NAME}/udp-log.txt" ]; then
-	rm ../logs/${TEST_NAME}/udp-log.txt
-fi
-
 # We check that there is connectivity with the server
-ping -c 1 $SERVER_IP > /dev/null 2>&1 && success=1
+#ping -c 1 $SERVER_IP > /dev/null 2>&1 && success=1
 nuttcp -i1 -T 1 $SERVER_IP > /dev/null 2>&1 && nuttcp=1
 
-if [ $success -eq 1 ] && [ $nuttcp -eq 1 ]
+if [ $nuttcp -eq 1 ]
 then
+
+for buffer in "${buffer_size[@]}"; do
+	
+	# We delete previous result files
+	if [ -f "../results/${TEST_NAME}/tcp-throughput-${buffer}.txt" ]; then
+		rm ../results/${TEST_NAME}/tcp-throughput-${buffer}.txt
+	fi
+
+	if [ -f "../results/${TEST_NAME}/tcp-retransmissions-${buffer}.txt" ]; then
+		rm ../results/${TEST_NAME}/tcp-retransmissions-${buffer}.txt
+	fi
+
+	if [ -f "../results/${TEST_NAME}/tcp-latency-${buffer}.txt" ]; then
+		rm ../results/${TEST_NAME}/tcp-latency-${buffer}.txt
+	fi
+
+	if [ -f "../results/${TEST_NAME}/udp-throughput-${buffer}.txt" ]; then
+		rm ../results/${TEST_NAME}/udp-throughput-${buffer}.txt
+	fi
+
+	if [ -f "../results/${TEST_NAME}/udp-error-${buffer}.txt" ]; then
+		rm ../results/${TEST_NAME}/udp-error-${buffer}.txt
+	fi
+
+	if [ -f "../results/${TEST_NAME}/box-plot-${buffer}.txt" ]; then
+		rm ../results/${TEST_NAME}/box-plot-${buffer}.txt
+	fi
+
+	# We delete previous log files
+	if [ -f "../logs/${TEST_NAME}/tcp-log-${buffer}.txt" ]; then
+		rm ../logs/${TEST_NAME}/tcp-log-${buffer}.txt
+	fi
+
+	if [ -f "../logs/${TEST_NAME}/udp-log-${buffer}.txt" ]; then
+		rm ../logs/${TEST_NAME}/udp-log-${buffer}.txt
+	fi
+
+	rb_default="net.core.rmem_default"
+	rb_max="net.core.rmem_max"
+
+	wb_default="net.core.wmem_default"
+	wb_max="net.core.wmem_max"
+
+	sysctl -w "$rb_default"=$buffer
+	sysctl -w "$rb_max"=$buffer
+
+	sysctl -w "$wb_default"=$buffer
+	sysctl -w "$wb_max"=$buffer
+
+	rmem_default=$(sysctl net.core.rmem_default)
+	rmem_max=$(sysctl net.core.rmem_max)
+
+	wmem_default=$(sysctl net.core.wmem_default)
+	wmem_max=$(sysctl net.core.wmem_max)
+	
+	echo "Kernel buffer size set to $rmem_default"
+
+
 
 #	: <<'END'
   # We run the TCP netperf test 
@@ -96,11 +121,11 @@ then
 
 	for i in $(seq 1 $TESTS); do
     # We save the output as a log file and extract the last line to get the results
-    echo "nuttcp -i1 -T ${TEST_DURATION} $SERVER_IP" >> ../logs/${TEST_NAME}/tcp-log.txt
-    nuttcp -i1 -T ${TEST_DURATION} $SERVER_IP >> ../logs/${TEST_NAME}/tcp-log.txt
-    nuttcp_result_tcp=$(tail -1 ../logs/${TEST_NAME}/tcp-log.txt)
-    echo "------------------------------------------------------------------------------" >> ../logs/${TEST_NAME}/tcp-log.txt
-    echo "" >> ../logs/${TEST_NAME}/tcp-log.txt
+    echo "nuttcp -i1 -T ${TEST_DURATION} $SERVER_IP" >> ../logs/${TEST_NAME}/tcp-log-${buffer}.txt
+    nuttcp -i1 -T ${TEST_DURATION} $SERVER_IP >> ../logs/${TEST_NAME}/tcp-log-${buffer}.txt
+    nuttcp_result_tcp=$(tail -1 ../logs/${TEST_NAME}/tcp-log-${buffer}.txt)
+    echo "------------------------------------------------------------------------------" >> ../logs/${TEST_NAME}/tcp-log-${buffer}.txt
+    echo "" >> ../logs/${TEST_NAME}/tcp-log-${buffer}.txt
 
 		# Throughput for TCP
 		part_bitrate_tcp=$(echo $nuttcp_result_tcp | awk '{print $7}')
@@ -116,10 +141,10 @@ then
     units_latency_tcp=$(echo $nuttcp_result_tcp | awk '{print $16}')
 		total_latency_tcp=$(echo $total_latency_tcp + $part_latency_tcp | bc)
 
-		echo -n "$part_bitrate_tcp " >> ../results/${TEST_NAME}/box-plot.txt
+		echo -n "$part_bitrate_tcp " >> ../results/${TEST_NAME}/box-plot-${buffer}.txt
 
 		if [ $i -eq $TESTS ]; then
-			echo "TCP" >> ../results/${TEST_NAME}/box-plot.txt
+			echo "TCP" >> ../results/${TEST_NAME}/box-plot-${buffer}.txt
 		fi
 	done
 
@@ -127,17 +152,17 @@ then
 	# We calculate the average throughput for TCP
 	avg_bitrate_tcp=$(echo "scale=3; $total_bitrate_tcp / $TESTS" | bc -l)
 	echo "NUTTCP - The average bitrate for TCP in $TESTS runs is $avg_bitrate_tcp $units_bitrate_tcp"
-	echo "throughput $avg_bitrate_tcp" >> ../results/${TEST_NAME}/tcp-throughput.txt
+	echo "throughput $avg_bitrate_tcp" >> ../results/${TEST_NAME}/tcp-throughput-${buffer}.txt
 
   # We calculate the average retransmissions for TCP
 	avg_retransmissions_tcp=$(echo "scale=3; $total_retransmissions_tcp / $TESTS" | bc -l)
 	echo "NUTTCP - The average retransmissions for TCP in $TESTS runs is $avg_retransmissions_tcp"
-	echo "retransmissions $avg_retransmissions_tcp" >> ../results/${TEST_NAME}/tcp-retransmissions.txt
+	echo "retransmissions $avg_retransmissions_tcp" >> ../results/${TEST_NAME}/tcp-retransmissions-${buffer}.txt
 
   # We calculate the average latency for TCP
 	avg_latency_tcp=$(echo "scale=3; $total_latency_tcp / $TESTS" | bc -l)
 	echo "NUTTCP - The average latency for TCP in $TESTS runs is $avg_latency_tcp $units_latency_tcp"
-	echo "latency $avg_latency_tcp" >> ../results/${TEST_NAME}/tcp-latency.txt
+	echo "latency $avg_latency_tcp" >> ../results/${TEST_NAME}/tcp-latency-${buffer}.txt
 
 	total_bitrate_tcp=0
   total_retransmissions_tcp=0
@@ -151,25 +176,25 @@ then
   # We calculate the average UDP throughput for different message sizes, injection bitrates and packet bursts
   for size in "${message_size[@]}"; do
     echo "Message size set to $size"
-    echo "Message size set to $size" >> ../logs/${TEST_NAME}/udp-log.txt
+    echo "Message size set to $size" >> ../logs/${TEST_NAME}/udp-log-${buffer}.txt
     for bitrate in "${injection_bitrate[@]}"; do
       echo "Injection bitrate set to $bitrate"
-      echo "Injection bitrate set to $bitrate" >> ../logs/${TEST_NAME}/udp-log.txt
+      echo "Injection bitrate set to $bitrate" >> ../logs/${TEST_NAME}/udp-log-${buffer}.txt
       for burst in "${packet_burst[@]}"; do
         echo "Packet burst set to $burst"
-        echo "Packet burst set to $burst" >> ../logs/${TEST_NAME}/udp-log.txt
-        echo "------------------------------------------------------------------------------" >> ../logs/${TEST_NAME}/udp-log.txt
+        echo "Packet burst set to $burst" >> ../logs/${TEST_NAME}/udp-log-${buffer}.txt
+        echo "------------------------------------------------------------------------------" >> ../logs/${TEST_NAME}/udp-log-${buffer}.txt
         for i in $(seq 1 $TESTS); do
-          echo "RUN: $i - MSG SIZE: $size - INJ BITRATE: $bitrate - PKT BURST: $burst"
-          echo "RUN: $i - MSG SIZE: $size - INJ BITRATE: $bitrate - PKT BURST: $burst" >> ../logs/${TEST_NAME}/udp-log.txt
+          echo "RUN: $i - MSG SIZE: $size - INJ BITRATE: $bitrate - PKT BURST: $burst - BUFFER SIZE: $rmem_default"
+          echo "RUN: $i - MSG SIZE: $size - INJ BITRATE: $bitrate - PKT BURST: $burst - BUFFER SIZE: $rmem_default" >> ../logs/${TEST_NAME}/udp-log-${buffer}.txt
 
           # We save the output as a log file and extract the last line to get the results
-          echo "nuttcp -u -l${size} -Ri${bitrate}/${burst} -i 1 -T ${TEST_DURATION} ${SERVER_IP}" >> ../logs/${TEST_NAME}/udp-log.txt
-          nuttcp -u -l${size} -Ri${bitrate}/${burst} -i 1 -T ${TEST_DURATION} ${SERVER_IP} >> ../logs/${TEST_NAME}/udp-log.txt
-          nuttcp_result_udp=$(tail -1 ../logs/${TEST_NAME}/udp-log.txt)
+          echo "nuttcp -u -l${size} -Ri${bitrate}/${burst} -i 1 -T ${TEST_DURATION} ${SERVER_IP}" >> ../logs/${TEST_NAME}/udp-log-${buffer}.txt
+          nuttcp -u -l${size} -Ri${bitrate}/${burst} -i 1 -T ${TEST_DURATION} ${SERVER_IP} >> ../logs/${TEST_NAME}/udp-log-${buffer}.txt
+          nuttcp_result_udp=$(tail -1 ../logs/${TEST_NAME}/udp-log-${buffer}.txt)
 
-          echo "------------------------------------------------------------------------------" >> ../logs/${TEST_NAME}/udp-log.txt
-          echo "" >> ../logs/${TEST_NAME}/udp-log.txt
+          echo "------------------------------------------------------------------------------" >> ../logs/${TEST_NAME}/udp-log-${buffer}.txt
+          echo "" >> ../logs/${TEST_NAME}/udp-log-${buffer}.txt
 
           # UDP throughput
           part_bitrate_udp=$(echo $nuttcp_result_udp | awk '{print $7}')
@@ -184,12 +209,12 @@ then
         # We calculate the average throughput for UDP 
         avg_bitrate_udp=$(echo "scale=3; $total_bitrate_udp / $TESTS" | bc -l)
         echo "NUTTCP - The average throughput for UDP in $TESTS runs, message size of $size MB, injection bitrate of $bitrate Mbps and a packet burst of $burst packets is $avg_bitrate_udp $units_bitrate_udp"
-        echo "$size $avg_bitrate_udp" >> ../results/${TEST_NAME}/udp-throughput.txt
+        echo "$size $avg_bitrate_udp" >> ../results/${TEST_NAME}/udp-throughput-${buffer}.txt
 
         # We calculate the average errors for UDP 
         avg_loss_udp=$(echo "scale=3; $total_loss_udp / $TESTS" | bc -l)
         echo "NUTTCP - The average errors for UDP in $TESTS runs, message size of $size MB, injection bitrate of $bitrate Mbps and a packet burst of $burst packets is $avg_loss_udp %"
-        echo "$size $bitrate $burst $avg_loss_udp" >> ../results/${TEST_NAME}/udp-error.txt
+        echo "$size $bitrate $burst $avg_loss_udp" >> ../results/${TEST_NAME}/udp-error-${buffer}.txt
         echo ""
 
         total_bitrate_udp=0
@@ -202,6 +227,7 @@ then
       done
     done
 	done
+done
 
 else
 	echo "---------------------------------"
