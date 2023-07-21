@@ -3,39 +3,12 @@
 # Test
 export TEST_NAME="nuttcp"
 
-# Constants
-#SERVER_IP=192.168.0.20
-#CLIENT_IP=192.168.0.10
-
 # Variables
-success=0
 nuttcp=0
 injection_bitrate=(100 500 1000 2000 3000 10000 0)
 packet_burst=(5 10 20 50 100 200)
 message_size=(1448 8972)
 buffer_size=(212992 157286400)
-export TEST_DURATION=10
-export TESTS=2
-
-part_bitrate_tcp=0
-total_bitrate_tcp=0
-avg_bitrate_tcp=0
-
-part_retransmisssions_tcp=0
-total_retransmissions_tcp=0
-avg_retransmissions_tcp=0
-
-part_latency_tcp=0
-total_latency_tcp=0
-avg_latency_tcp=0
-
-part_bitrate_udp=0
-total_bitrate_udp=0
-avg_bitrate_udp=0
-
-part_loss_udp=0
-total_loss_udp=0
-avg_loss_udp=0
 
 # We create results directory if it doesn't exist
 if [ ! -d "../results/${TEST_NAME}" ]; then

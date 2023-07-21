@@ -3,29 +3,10 @@
 # Test
 export TEST_NAME="netperf"
 
-# Constants
-#SERVER_IP=127.0.0.1
-#CLIENT_IP=192.168.0.10
-
 # Variables
-success=0
 nperf=0
 message_size=(512 1024 2048 4096 8192 16384)
 buffer_size=(212992 157286400)
-#export TEST_DURATION=10
-#export TESTS=10
-
-part_bitrate_tcp=0
-total_bitrate_tcp=0
-avg_bitrate_tcp=0
-
-part_bitrate_udp=0
-total_bitrate_udp=0
-avg_bitrate_udp=0
-
-part_loss_udp=0
-total_loss_udp=0
-avg_loss_udp=0
 
 
 # We create results directory if it doesn't exist

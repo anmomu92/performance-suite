@@ -9,6 +9,10 @@ message_size=(1472 8972)
 
 # Variables specific to this bash script
 ip3=0
+injection_bitrate=(100 500 1000 2000 3000 10000 0)
+buffer_size=(212992 157286400)
+message_size=(1472 8972)
+
 
 # We create results directory if it doesn't exist
 if [ ! -d "../results/${TEST_NAME}" ]; then
