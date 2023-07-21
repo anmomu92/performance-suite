@@ -166,8 +166,8 @@ for buffer in "${buffer_size[@]}"; do
           echo "RUN: $i - MSG SIZE: $size - INJ BITRATE: $bitrate - PKT BURST: $burst - BUFFER SIZE: $rmem_default" >> ../logs/${TEST_NAME}/udp-log-${buffer}.txt
 
           # We save the output as a log file and extract the last line to get the results
-          echo "nuttcp -u -l${size} -Ri${bitrate}/${burst} -i 1 -T ${TEST_DURATION} ${SERVER_IP}" >> ../logs/${TEST_NAME}/udp-log-${buffer}.txt
-          nuttcp -u -l${size} -Ri${bitrate}/${burst} -i 1 -T ${TEST_DURATION} ${SERVER_IP} >> ../logs/${TEST_NAME}/udp-log-${buffer}.txt
+          echo "nuttcp -u -Ri${bitrate}/${burst} -i 1 -T ${TEST_DURATION} ${SERVER_IP}" >> ../logs/${TEST_NAME}/udp-log-${buffer}.txt
+          nuttcp -u -Ri${bitrate}/${burst} -i 1 -T ${TEST_DURATION} ${SERVER_IP} >> ../logs/${TEST_NAME}/udp-log-${buffer}.txt
           nuttcp_result_udp=$(tail -1 ../logs/${TEST_NAME}/udp-log-${buffer}.txt)
 
           echo "------------------------------------------------------------------------------" >> ../logs/${TEST_NAME}/udp-log-${buffer}.txt
