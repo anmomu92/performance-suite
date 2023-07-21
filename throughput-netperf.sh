@@ -126,52 +126,52 @@ for buffer in "${buffer_size[@]}"; do
 	total_bitrate_tcp=0
 
   # We run the UDP netperf test 
-  	echo "-----------------"
+ 	echo "-----------------"
 	echo "| UDP - NETPERF |"
 	echo "-----------------"
 
   # We calculate the average UDP throughput for different message sizes 
   for size in "${message_size[@]}"; do
-	echo "Message size set to $size"
-	echo "------------------------------------------------------------------------------" >> ../logs/${TEST_NAME}/udp-log-${buffer}.txt
-	for i in $(seq 1 $TESTS); do
-      		echo "RUN = $i - MSG_SIZE = $size - BUFFER_SIZE = $rmem_default"
-      		echo "RUN = $i - MSG_SIZE = $size - BUFFER_SIZE = $rmem_default" >> ../logs/${TEST_NAME}/udp-log-${buffer}.txt
-      		# We save the output as a log file and extract the last line to get the results
-      		netperf -H ${SERVER_IP} -t UDP_STREAM -l ${TEST_DURATION} -- -m ${size} -- -f m >> ../logs/${TEST_NAME}/udp-log-${buffer}.txt
-      		netperf_result_udp=$(tail -3 ../logs/${TEST_NAME}/udp-log-${buffer}.txt | head -1)
+    echo "Message size set to $size"
+    echo "------------------------------------------------------------------------------" >> ../logs/${TEST_NAME}/udp-log-${buffer}.txt
+    echo "MSG_SIZE = $size - BUFFER_SIZE = $rmem_default" >> ../results/${TEST_NAME}/udp-throughput-${buffer}.txt
+    echo "MSG_SIZE = $size - BUFFER_SIZE = $rmem_default" >> ../results/${TEST_NAME}/udp-error-${buffer}.txt
+      for i in $(seq 1 $TESTS); do
+        echo "RUN = $i - MSG_SIZE = $size - BUFFER_SIZE = $rmem_default"
+        echo "RUN = $i - MSG_SIZE = $size - BUFFER_SIZE = $rmem_default" >> ../logs/${TEST_NAME}/udp-log-${buffer}.txt
+        # We save the output as a log file and extract the last line to get the results
+        netperf -H ${SERVER_IP} -t UDP_STREAM -l ${TEST_DURATION} -- -m ${size} -- -f m >> ../logs/${TEST_NAME}/udp-log-${buffer}.txt
+        netperf_result_udp=$(tail -3 ../logs/${TEST_NAME}/udp-log-${buffer}.txt | head -1)
 
+        echo "------------------------------------------------------------------------------" >> ../logs/${TEST_NAME}/udp-log-${buffer}.txt
+        echo "" >> ../logs/${TEST_NAME}/udp-log-${buffer}.txt
 
-		echo "------------------------------------------------------------------------------" >> ../logs/${TEST_NAME}/udp-log-${buffer}.txt
-		echo "" >> ../logs/${TEST_NAME}/udp-log-${buffer}.txt
+        # Throughput for UDP
+        part_bitrate_udp=$(echo $netperf_result_udp | awk '{print $6}')
+        total_bitrate_udp=$(echo $total_bitrate_udp + $part_bitrate_udp | bc)
 
-      		# Throughput for UDP
-      		part_bitrate_udp=$(echo $netperf_result_udp | awk '{print $6}')
-      		total_bitrate_udp=$(echo $total_bitrate_udp + $part_bitrate_udp | bc)
+        # Errors for UDP
+        part_loss_udp=$(echo $netperf_result_udp | awk '{print $5}')
+        total_loss_udp=$(echo $total_loss_udp + $part_loss_udp | bc)
+      done
 
-      		# Errors for UDP
-      		part_loss_udp=$(echo $netperf_result_udp | awk '{print $5}')
-      		total_loss_udp=$(echo $total_loss_udp + $part_loss_udp | bc)
-    	done
+    # We calculate the average throughput for UDP 
+    avg_bitrate_udp=$(echo "scale=3; $total_bitrate_udp / $TESTS" | bc -l)
+    echo "NETPERF - The average throughput for UDP in $TESTS runs and message size of $size is $avg_bitrate_udp Mbps"
+    echo "$size $avg_bitrate_udp" >> ../results/${TEST_NAME}/udp-throughput-${buffer}.txt
 
-	# We calculate the average throughput for UDP 
-	avg_bitrate_udp=$(echo "scale=3; $total_bitrate_udp / $TESTS" | bc -l)
-	echo "NETPERF - The average throughput for UDP in $TESTS runs and message size of $size is $avg_bitrate_udp Mbps"
-	echo "$size $avg_bitrate_udp" >> ../results/${TEST_NAME}/udp-throughput-${buffer}.txt
+    # We calculate the average errors for UDP 
+    avg_loss_udp=$(echo "scale=3; $total_loss_udp / $TESTS" | bc -l)
+    echo "NETPERF - The average errors for UDP in $TESTS runs and message size of $size is $avg_loss_udp"
+    echo "$size $avg_loss_udp" >> ../results/${TEST_NAME}/udp-error-${buffer}.txt
 
-    	# We calculate the average errors for UDP 
-	avg_loss_udp=$(echo "scale=3; $total_loss_udp / $TESTS" | bc -l)
-	echo "NETPERF - The average errors for UDP in $TESTS runs and message size of $size is $avg_loss_udp"
-	echo "$size $avg_loss_udp" >> ../results/${TEST_NAME}/udp-error-${buffer}.txt
+    total_bitrate_udp=0
+    part_bitrate_udp=0
+    avg_bitrate_udp=0
 
-    	total_bitrate_udp=0
-    	part_bitrate_udp=0
-    	avg_bitrate_udp=0
-
-    	total_loss_udp=0
-    	part_loss_udp=0
-    	avg_loss_udp=0
-
+    total_loss_udp=0
+    part_loss_udp=0
+    avg_loss_udp=0
 
   done
 done
