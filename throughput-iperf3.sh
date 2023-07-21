@@ -201,22 +201,22 @@ then
       # We calculate the average UDP transfer
       avg_transfer_udp=$(echo "scale=3; $total_transfer_udp / $TESTS" | bc -l)
       echo "The average transfer for UDP in $TESTS runs and injection bitrate of $bitrate Mbps is $avg_transfer_udp $units_transfer_udp"
-      echo "$size $avg_transfer_udp" >> ../results/${TEST_NAME}/udp-transfer-${buffer}.txt
+      echo "$bitrate $avg_transfer_udp" >> ../results/${TEST_NAME}/udp-transfer-${buffer}.txt
 
       # We calculate the average UDP bitrate 
       avg_bitrate_udp=$(echo "scale=3; $total_bitrate_udp / $TESTS" | bc -l)
       echo "The average bitrate for UDP in $TESTS runs and injection bitrate of $bitrate is $avg_bitrate_udp $units_bitratre_udp"
-      echo "$size $avg_bitrate_udp" >> ../results/${TEST_NAME}/udp-throughput-${buffer}.txt
+      echo "$bitrate $avg_bitrate_udp" >> ../results/${TEST_NAME}/udp-throughput-${buffer}.txt
 
       # We calculate the average UDP jitter
       avg_jitter_udp=$(echo "scale=3; $total_jitter_udp / $TESTS" | bc -l)
       echo "The average jitter for UDP in $TESTS runs and injection bitrate of $bitrate is $avg_jitter_udp $units_jitter_udp"
-      echo "$size $avg_jitter_udp" >> ../results/${TEST_NAME}/udp-jitter-${buffer}.txt
+      echo "$bitrate $avg_jitter_udp" >> ../results/${TEST_NAME}/udp-jitter-${buffer}.txt
 
       # We calculate the average UDP datagram loss
       avg_loss_udp=$(echo "scale=3; $total_loss_udp / $TESTS" | bc -l)
       echo "The average datagram loss for UDP in $TESTS runs and injection bitrate of $bitrate is $avg_loss_udp %"
-      echo "$size $avg_loss_udp" >> ../results/${TEST_NAME}/udp-loss-${buffer}.txt
+      echo "$bitrate $avg_loss_udp" >> ../results/${TEST_NAME}/udp-loss-${buffer}.txt
 
       total_transfer_udp=0
       total_bitrate_udp=0

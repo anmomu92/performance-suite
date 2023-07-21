@@ -149,9 +149,9 @@ for buffer in "${buffer_size[@]}"; do
 	echo "----------------"
 
   # We calculate the average UDP throughput for different message sizes, injection bitrates and packet bursts
-  for size in "${message_size[@]}"; do
-    echo "Message size set to $size"
-    echo "Message size set to $size" >> ../logs/${TEST_NAME}/udp-log-${buffer}.txt
+  #for size in "${message_size[@]}"; do
+  #  echo "Message size set to $size"
+  #  echo "Message size set to $size" >> ../logs/${TEST_NAME}/udp-log-${buffer}.txt
     for bitrate in "${injection_bitrate[@]}"; do
       echo "Injection bitrate set to $bitrate"
       echo "Injection bitrate set to $bitrate" >> ../logs/${TEST_NAME}/udp-log-${buffer}.txt
@@ -159,8 +159,8 @@ for buffer in "${buffer_size[@]}"; do
         echo "Packet burst set to $burst"
         echo "Packet burst set to $burst" >> ../logs/${TEST_NAME}/udp-log-${buffer}.txt
         echo "------------------------------------------------------------------------------" >> ../logs/${TEST_NAME}/udp-log-${buffer}.txt
-        echo "MSG SIZE: $size - INJ BITRATE: $bitrate - PKT BURST: $burst - BUFFER SIZE: $rmem_default" >> ../results/${TEST_NAME}/udp-throughput-${buffer}.txt
-        echo "MSG SIZE: $size - INJ BITRATE: $bitrate - PKT BURST: $burst - BUFFER SIZE: $rmem_default" >> ../results/${TEST_NAME}/udp-error-${buffer}.txt
+        echo "INJ BITRATE: $bitrate - PKT BURST: $burst - BUFFER SIZE: $rmem_default" >> ../results/${TEST_NAME}/udp-throughput-${buffer}.txt
+        echo "INJ BITRATE: $bitrate - PKT BURST: $burst - BUFFER SIZE: $rmem_default" >> ../results/${TEST_NAME}/udp-error-${buffer}.txt
         for i in $(seq 1 $TESTS); do
           echo "RUN: $i - MSG SIZE: $size - INJ BITRATE: $bitrate - PKT BURST: $burst - BUFFER SIZE: $rmem_default"
           echo "RUN: $i - MSG SIZE: $size - INJ BITRATE: $bitrate - PKT BURST: $burst - BUFFER SIZE: $rmem_default" >> ../logs/${TEST_NAME}/udp-log-${buffer}.txt
@@ -185,13 +185,13 @@ for buffer in "${buffer_size[@]}"; do
         done
         # We calculate the average throughput for UDP 
         avg_bitrate_udp=$(echo "scale=3; $total_bitrate_udp / $TESTS" | bc -l)
-        echo "NUTTCP - The average throughput for UDP in $TESTS runs, message size of $size MB, injection bitrate of $bitrate Mbps and a packet burst of $burst packets is $avg_bitrate_udp $units_bitrate_udp"
-        echo "$size $avg_bitrate_udp" >> ../results/${TEST_NAME}/udp-throughput-${buffer}.txt
+        echo "NUTTCP - The average throughput for UDP in $TESTS runs, injection bitrate of $bitrate Mbps and a packet burst of $burst packets is $avg_bitrate_udp $units_bitrate_udp"
+        echo "$bitrate $avg_bitrate_udp" >> ../results/${TEST_NAME}/udp-throughput-${buffer}.txt
 
         # We calculate the average errors for UDP 
         avg_loss_udp=$(echo "scale=3; $total_loss_udp / $TESTS" | bc -l)
-        echo "NUTTCP - The average errors for UDP in $TESTS runs, message size of $size MB, injection bitrate of $bitrate Mbps and a packet burst of $burst packets is $avg_loss_udp %"
-        echo "$size $bitrate $burst $avg_loss_udp" >> ../results/${TEST_NAME}/udp-error-${buffer}.txt
+        echo "NUTTCP - The average errors for UDP in $TESTS runs, injection bitrate of $bitrate Mbps and a packet burst of $burst packets is $avg_loss_udp %"
+        echo "$bitrate $avg_loss_udp" >> ../results/${TEST_NAME}/udp-error-${buffer}.txt
         echo ""
 
         total_bitrate_udp=0
@@ -204,7 +204,7 @@ for buffer in "${buffer_size[@]}"; do
       done
     done
 	done
-done
+#done
 
 else
 	echo "---------------------------------"
