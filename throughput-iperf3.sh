@@ -56,8 +56,12 @@ then
       rm ../results/${TEST_NAME}/udp-error-${buffer}.txt
     fi
 
-    if [ -f "../results/${TEST_NAME}/box-plot-${buffer}.txt" ]; then
-      rm ../results/${TEST_NAME}/box-plot-${buffer}.txt
+    if [ -f "../results/${TEST_NAME}/tcp-box-plot-${buffer}.txt" ]; then
+      rm ../results/${TEST_NAME}/tcp-box-plot-${buffer}.txt
+    fi
+
+    if [ -f "../results/${TEST_NAME}/udp-box-plot-${buffer}.txt" ]; then
+      rm ../results/${TEST_NAME}/udp-box-plot-${buffer}.txt
     fi
 
     # We delete previous log files
@@ -120,11 +124,8 @@ then
       total_retransmissions_tcp=$(echo $total_retransmissions_tcp + $part_retransmissions_tcp | bc)
 
       # We add data to the boxplot text file
-      echo -n "$part_bitrate_tcp " >> ../results/${TEST_NAME}/box-plot-${buffer}.txt
+      echo "$part_bitrate_tcp " >> ../results/${TEST_NAME}/tcp-box-plot-${buffer}.txt
 
-      if [ $i -eq $TESTS ]; then
-        echo "TCP" >> ../results/${TEST_NAME}/box-plot-${buffer}.txt
-      fi
     done
 
     # We calculate the average transfered bytes for TCP
@@ -167,8 +168,8 @@ then
         echo "RUN: $i - INJ BITRATE: $bitrate - BUFFER SIZE: $rmem_default" >> ../logs/${TEST_NAME}/udp-log-${buffer}.txt
 
         # We save the output as a log file
-        echo "iperf3 -c $SERVER_IP -B $CLIENT_IP -u -b${bitrate}M -O1 -t${TEST_DURATION}" >> ../logs/${TEST_NAME}/udp-log-${buffer}.txt
-        iperf3 -c $SERVER_IP -B $CLIENT_IP -u -b${bitrate}M -O1 -t${TEST_DURATION} >> ../logs/${TEST_NAME}/udp-log-${buffer}.txt
+        echo "iperf3 -c $SERVER_IP -B $CLIENT_IP -u -b${bitrate}M -O1 -t${TEST_DURATION}" -f m >> ../logs/${TEST_NAME}/udp-log-${buffer}.txt
+        iperf3 -c $SERVER_IP -B $CLIENT_IP -u -b${bitrate}M -O1 -t${TEST_DURATION} -f m >> ../logs/${TEST_NAME}/udp-log-${buffer}.txt
 
         # We get the relevant line from the output
         iperf3_result_udp=$(tail -4 ../logs/${TEST_NAME}/udp-log-${buffer}.txt | head -1)
@@ -185,6 +186,8 @@ then
         part_bitrate_udp=$(echo $iperf3_result_udp | awk '{print $7}')
         units_bitrate_udp=$(echo $iperf3_result_udp | awk '{print $8}')
         total_bitrate_udp=$(echo $total_bitrate_udp + $part_bitrate_udp | bc)
+
+      	echo "$part_bitrate_udp " >> ../results/${TEST_NAME}/udp-box-plot-${buffer}.txt
 
         # UDP jitter
         part_jitter_udp=$(echo $iperf3_result_udp | awk '{print $9}')

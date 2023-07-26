@@ -3,7 +3,7 @@
 # Constants
 export SERVER_IP=192.168.0.20
 export CLIENT_IP=192.168.0.10
-export TESTS=1
+export TESTS=50
 export TEST_DURATION=10
 
 # Variables shared among different bash scripts

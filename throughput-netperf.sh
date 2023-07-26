@@ -44,9 +44,14 @@ for buffer in "${buffer_size[@]}"; do
 		rm ../results/${TEST_NAME}/udp-error-${buffer}.txt
 	fi
 
-	if [ -f "../results/${TEST_NAME}/box-plot-${buffer}.txt" ]; then
-		rm ../results/${TEST_NAME}/box-plot-${buffer}.txt
-	fi
+
+    	if [ -f "../results/${TEST_NAME}/tcp-box-plot-${buffer}.txt" ]; then
+      		rm ../results/${TEST_NAME}/tcp-box-plot-${buffer}.txt
+    	fi
+
+    	if [ -f "../results/${TEST_NAME}/udp-box-plot-${buffer}.txt" ]; then
+      		rm ../results/${TEST_NAME}/udp-box-plot-${buffer}.txt
+    	fi
 
 	# We delete previous log files
 	if [ -f "../logs/${TEST_NAME}/tcp-log-${buffer}.txt" ]; then
@@ -93,11 +98,8 @@ for buffer in "${buffer_size[@]}"; do
 		part_bitrate_tcp=$(echo $netperf_result_tcp | awk '{print $5}')
 		total_bitrate_tcp=$(echo $total_bitrate_tcp + $part_bitrate_tcp | bc)
 
-		echo -n "$part_bitrate_tcp " >> ../results/${TEST_NAME}/box-plot-${buffer}.txt
+		echo "$part_bitrate_tcp " >> ../results/${TEST_NAME}/tcp-box-plot-${buffer}.txt
 
-		if [ $i -eq $TESTS ]; then
-			echo "TCP" >> ../results/${TEST_NAME}/box-plot-${buffer}.txt
-		fi
 	done
 
 	
@@ -132,6 +134,8 @@ for buffer in "${buffer_size[@]}"; do
         # Throughput for UDP
         part_bitrate_udp=$(echo $netperf_result_udp | awk '{print $6}')
         total_bitrate_udp=$(echo $total_bitrate_udp + $part_bitrate_udp | bc)
+
+	echo "$part_bitrate_udp " >> ../results/${TEST_NAME}/udp-box-plot-${buffer}.txt
 
         # Errors for UDP
         part_loss_udp=$(echo $netperf_result_udp | awk '{print $5}')

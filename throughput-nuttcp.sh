@@ -53,9 +53,14 @@ for buffer in "${buffer_size[@]}"; do
 		rm ../results/${TEST_NAME}/udp-error-${buffer}.txt
 	fi
 
-	if [ -f "../results/${TEST_NAME}/box-plot-${buffer}.txt" ]; then
+	if [ -f "../results/${TEST_NAME}/tcp-box-plot-${buffer}.txt" ]; then
 		rm ../results/${TEST_NAME}/box-plot-${buffer}.txt
 	fi
+
+	if [ -f "../results/${TEST_NAME}/udp-box-plot-${buffer}.txt" ]; then
+		rm ../results/${TEST_NAME}/box-plot-${buffer}.txt
+	fi
+
 
 	# We delete previous log files
 	if [ -f "../logs/${TEST_NAME}/tcp-log-${buffer}.txt" ]; then
@@ -116,11 +121,8 @@ for buffer in "${buffer_size[@]}"; do
     units_latency_tcp=$(echo $nuttcp_result_tcp | awk '{print $16}')
 		total_latency_tcp=$(echo $total_latency_tcp + $part_latency_tcp | bc)
 
-		echo -n "$part_bitrate_tcp " >> ../results/${TEST_NAME}/box-plot-${buffer}.txt
+		echo "$part_bitrate_tcp " >> ../results/${TEST_NAME}/tcp-box-plot-${buffer}.txt
 
-		if [ $i -eq $TESTS ]; then
-			echo "TCP" >> ../results/${TEST_NAME}/box-plot-${buffer}.txt
-		fi
 	done
 
 	
@@ -155,7 +157,7 @@ for buffer in "${buffer_size[@]}"; do
     for bitrate in "${injection_bitrate[@]}"; do
       echo "Injection bitrate set to $bitrate"
       echo "Injection bitrate set to $bitrate" >> ../logs/${TEST_NAME}/udp-log-${buffer}.txt
-      for burst in "${packet_burst[@]}"; do
+      #for burst in "${packet_burst[@]}"; do
         echo "Packet burst set to $burst"
         echo "Packet burst set to $burst" >> ../logs/${TEST_NAME}/udp-log-${buffer}.txt
         echo "------------------------------------------------------------------------------" >> ../logs/${TEST_NAME}/udp-log-${buffer}.txt
@@ -166,8 +168,8 @@ for buffer in "${buffer_size[@]}"; do
           echo "RUN: $i - MSG SIZE: $size - INJ BITRATE: $bitrate - PKT BURST: $burst - BUFFER SIZE: $rmem_default" >> ../logs/${TEST_NAME}/udp-log-${buffer}.txt
 
           # We save the output as a log file and extract the last line to get the results
-          echo "nuttcp -u -Ri${bitrate}/${burst} -i 1 -T ${TEST_DURATION} ${SERVER_IP}" >> ../logs/${TEST_NAME}/udp-log-${buffer}.txt
-          nuttcp -u -Ri${bitrate}/${burst} -i 1 -T ${TEST_DURATION} ${SERVER_IP} >> ../logs/${TEST_NAME}/udp-log-${buffer}.txt
+          echo "nuttcp -u -Ri${bitrate}m -i 1 -T ${TEST_DURATION} ${SERVER_IP}" >> ../logs/${TEST_NAME}/udp-log-${buffer}.txt
+          nuttcp -u -Ri${bitrate}m -i 1 -T ${TEST_DURATION} ${SERVER_IP} >> ../logs/${TEST_NAME}/udp-log-${buffer}.txt
           nuttcp_result_udp=$(tail -1 ../logs/${TEST_NAME}/udp-log-${buffer}.txt)
 
           echo "------------------------------------------------------------------------------" >> ../logs/${TEST_NAME}/udp-log-${buffer}.txt
@@ -177,6 +179,8 @@ for buffer in "${buffer_size[@]}"; do
           part_bitrate_udp=$(echo $nuttcp_result_udp | awk '{print $7}')
           units_bitrate_udp=$(echo $nuttcp_result_udp | awk '{print $8}')
           total_bitrate_udp=$(echo $total_bitrate_udp + $part_bitrate_udp | bc)
+
+	  echo "$part_bitrate_udp " >> ../results/${TEST_NAME}/udp-box-plot-${buffer}.txt
 
           # UDP errors
           part_loss_udp=$(echo $nuttcp_result_udp | awk '{print $17}')
@@ -201,7 +205,7 @@ for buffer in "${buffer_size[@]}"; do
         total_loss_udp=0
         part_loss_udp=0
         avg_loss_udp=0
-      done
+      #done
     done
 	done
 #done
