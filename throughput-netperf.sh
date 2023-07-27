@@ -135,7 +135,7 @@ for buffer in "${buffer_size[@]}"; do
         part_bitrate_udp=$(echo $netperf_result_udp | awk '{print $6}')
         total_bitrate_udp=$(echo $total_bitrate_udp + $part_bitrate_udp | bc)
 
-	echo "$part_bitrate_udp " >> ../results/${TEST_NAME}/udp-box-plot-${buffer}.txt
+	echo "$part_bitrate_udp " >> ../results/${TEST_NAME}/udp-box-plot-${buffer}-${size}.txt
 
         # Errors for UDP
         part_loss_udp=$(echo $netperf_result_udp | awk '{print $5}')

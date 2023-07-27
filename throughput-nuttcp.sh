@@ -180,7 +180,7 @@ for buffer in "${buffer_size[@]}"; do
           units_bitrate_udp=$(echo $nuttcp_result_udp | awk '{print $8}')
           total_bitrate_udp=$(echo $total_bitrate_udp + $part_bitrate_udp | bc)
 
-	  echo "$part_bitrate_udp " >> ../results/${TEST_NAME}/udp-box-plot-${buffer}.txt
+	  echo "$part_bitrate_udp " >> ../results/${TEST_NAME}/udp-box-plot-${buffer}-${bitrate}.txt
 
           # UDP errors
           part_loss_udp=$(echo $nuttcp_result_udp | awk '{print $17}')
