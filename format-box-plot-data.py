@@ -1,5 +1,6 @@
 import argparse
 
+# Function to calculate the different statistics
 def calculate_statistics(data):
     # Sort the data in ascending order
     sorted_data = sorted(data)
