@@ -40,7 +40,7 @@ The script will generate two directories: `logs` and `results`. The `logs` direc
 ## TODO
 <ol>
     <li>main.sh: pass the number of tests and the duration as parameters. Also, it is necessary to make the prototype not request the password, as this script must be executed with `sudo`</li>
-    <li>run-test.sh: do not bring back the results from this script. The results should be sent by the prototype once the tests finish</li>
+    <li>run-test.sh: do not bring back the results from this script. The results should be sent by the prototype once the tests finish. Also, before running this script, the other scripts should be sent to the prototype.</li>
     <li>throughput-<tool>.sh: each script should send its results when finished. Also, each tool should launch the server with an `ssh` call from within the script. </li>
 </ol>
 
