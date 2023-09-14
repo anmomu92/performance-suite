@@ -1,6 +1,17 @@
-# Introduction 
+## Introduction 
+This repo contains the following scripts:
 
-The following scripts provide a way to automate the execution of different network testing tools. Currently, the following testing tools are automatized:
+<ul>
+    <li>`format-box-plot-data.py` (Deprecated): this python script was used to transform the boxplot data into a gnuplot-readable format. As `R` is now used to make the boxplots, this script is not necessary anymore.</li>
+    <li>`latency-qperf.sh`: it performs several `qperf` tests and measures the average latency. It needs further work.</li>
+    <li>`main.sh`: this is the script meant to be launched in the prototype. It launches the tests designed for the different tools. From this script, you can type the number of runs that each tool is going to perform, as well as the duration of each run.</li>
+    <li>`run-test.sh`: this script is meant to be launched from a local workstation. This script calls the `main.sh` script in the remote side (the prototype) and brings back the results.</li>
+    <li>`throughput-iperf3.sh`: this script sets the `iperf3` connection and gathers the data necessary to make boxplots and performance comparisons between different buffer sizes for TCP and UDP.</li>
+    <li>`throughput-netperf.sh`: this script sets the `netperf` connection and gathers the data necessary to make boxplots and performance comparisons between different buffer sizes for TCP and UDP.</li>
+    <li>`throughput-nuttcp.sh`: this script sets the `nuttcp` connection and gathers the data necessary to make boxplots and performance comparisons between different buffer sizes for TCP and UDP.</li>
+</ul>
+
+Overall, these scripts provide a way to automate the execution of different network testing tools. Currently, the following testing tools are automatized:
 
 - iperf3
 - netperf
@@ -23,6 +34,13 @@ The script will generate two directories: `logs` and `results`. The `logs` direc
 ### Examples of usage
 
 If you run `sudo ./main.sh` and choose select just the `iperf3` option, then two sets of files will be created: one under the `iperf3` directory within the `log` directory, and another set under the `iperf3` directory within the results` directory.
+
+## TODO
+<ol>
+    <li>`main.sh`: pass the number of tests and the duration as parameters.</li>
+    <li>`run-test.sh`: do not bring back the results from this script. The results should be sent by the prototype once the tests finish</li>
+    <li>`throughput-<tool>.sh`: each script should send its results when finished. Also, each tool should launch the server with an `ssh` call from within the script. </li>
+</ol>
 
 ## Contributing
 
