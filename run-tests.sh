@@ -38,12 +38,12 @@ if [ "$prototype" -eq 2 ]; then
     read -p $'What is the prototype configuration?\n1. Host A - Switch - Host B. \n2. Host A - Host B\n' configuration
     if [ "$configuration" -eq 1  ]; then
         mv ${results_dir}/con-switch ${results_dir}/con-switch.$current_time.txt
-        ssh ${username}@{prototype_ip} ${remote_scripts_dir}/main.sh
+        ssh ${username}@{prototype_ip} "sudo ${remote_scripts_dir}/main.sh"
         scp ${username}@{prototype_ip}:${remote_results_dir}/con-switch/* ${results_dir}/con-switch
     fi
     if [ "$configuration" -eq 2  ]; then
         mv ${results_dir}/sin-switch ${results_dir}/sin-switch.$current_time.txt
-        ssh ${username}@{prototype_ip} ${remote_scripts_dir}/main.sh
+        ssh ${username}@{prototype_ip} "sudo ${remote_scripts_dir}/main.sh"
         scp ${username}@{prototype_ip}:${remote_results_dir}/sin-switch/* ${results_dir}/sin-switch
     fi
     if [ "$configuration" != "1" ] && [ "$configuration" != "2" ]; then
