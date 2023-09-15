@@ -2,6 +2,9 @@
 
 # Constants
 export USERNAME="antonio"
+export HOST_A=161.67.133.94
+export HOST_B=161.67.133.93
+export SWITCH=161.67.133.92
 export SERVER_IP=192.168.0.20
 export CLIENT_IP=192.168.0.10
 export TESTS=1
@@ -62,15 +65,18 @@ then
   test_nuttcp=1
 
   if [ $test_iperf3 -eq 1 ]; then
-    ./throughput-iperf3.sh
+      ssh -i /home/antonio/.ssh/id_ed25519 ${USERNAME}@${HOST_B} "iperf3 -s -B ${SERVER_IP} &"
+      ./throughput-iperf3.sh
   fi
 
   if [ $test_netperf -eq 1 ]; then
-    ./throughput-netperf.sh
+      ssh ${USERNAME}@${HOST_B} "netserver"
+      ./throughput-netperf.sh
   fi
 
   if [ $test_nuttcp -eq 1 ]; then
-    ./throughput-nuttcp.sh
+      ssh ${USERNAME}@${HOST_B} "nuttcp -S"
+      ./throughput-nuttcp.sh
   fi
 
 else
