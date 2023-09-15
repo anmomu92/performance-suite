@@ -1,9 +1,10 @@
 #!/bin/bash
 
 # Constants
+export USERNAME="antonio"
 export SERVER_IP=192.168.0.20
 export CLIENT_IP=192.168.0.10
-export TESTS=50
+export TESTS=1
 export TEST_DURATION=10
 
 # Variables shared among different bash scripts
@@ -45,15 +46,20 @@ if [ $success -eq 1 ]
 then
 
   # We ask the user which test they want to perform
-  echo "Hello user, it looks like there is connectivity with the host..."
-  echo "Now I will ask you which tests you want to run"
-  echo "----------------------------------------------"
-  echo "Do you want to run iperf3 tests? (1=yes | 0=no)"
-  read test_iperf3
-  echo "Do you want to run netperf tests? (1=yes | 0=no)"
-  read test_netperf
-  echo "Do you want to run nuttcp tests? (1=yes | 0=no)"
-  read test_nuttcp
+  #echo "Hello user, it looks like there is connectivity with the host..."
+  #echo "Now I will ask you which tests you want to run"
+  #echo "----------------------------------------------"
+  #echo "Do you want to run iperf3 tests? (1=yes | 0=no)"
+  #read test_iperf3
+  #echo "Do you want to run netperf tests? (1=yes | 0=no)"
+  #read test_netperf
+  #echo "Do you want to run nuttcp tests? (1=yes | 0=no)"
+  #read test_nuttcp
+
+  # Default values
+  test_iperf3=1
+  test_netperf=1
+  test_nuttcp=1
 
   if [ $test_iperf3 -eq 1 ]; then
     ./throughput-iperf3.sh
