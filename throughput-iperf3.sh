@@ -1,116 +1,100 @@
 #!/bin/bash
 
-# Constants
-export TEST_NAME="iperf3"
-injection_bitrate=(100 500 1000 2000 3000 10000 0)
-packet_burst=(5 10 20 50 100 200)
+source settings.sh
 
-# Variables specific to this bash script
+# Variables
+TEST_NAME="iperf3"
 ip3=0
-injection_bitrate=(100 500 1000 2000 3000 10000 0)
-buffer_size=(106496 212992 524288 1048576 52428800 157286400) # 104KB 208KB 512KB 1MB 50MB  150MB
-message_size=(1472 8972)
 
-
-# We create results directory if it doesn't exist
+# Create results directory if it doesn't exist
 if [ ! -d "../results/${TEST_NAME}" ]; then
 	mkdir -p ../results/${TEST_NAME}
 fi
 
-# We create logs directory if it doesn't exist
+# Create logs directory if it doesn't exist
 if [ ! -d "../logs/${TEST_NAME}" ]; then
 	mkdir -p ../logs/${TEST_NAME}
 fi
 
-# We show the test name
+# Print the test name
 echo "---------------------------------------------------------- IPERF3 ----------------------------------------------------------"
 
-# We check that the server is running iperf3
+# Check that the server is running iperf3
 iperf3 -c $SERVER_IP -B $CLIENT_IP -t 1 > /dev/null 2>&1 && ip3=1
 
-if [ $ip3 -eq 1 ]
-then
+# Server is running
+if [ $ip3 -eq 1 ]; then
+    for buffer in "${buffer_size[@]}"; do # Buffer size
+        # Delete previous result files
+        if [ -f "../results/${TEST_NAME}/tcp-throughput-${buffer}.txt" ]; then
+            rm ../results/${TEST_NAME}/tcp-throughput-${buffer}.txt
+        fi
 
-  for buffer in "${buffer_size[@]}"; do
-    
-    # We delete previous result files
-    if [ -f "../results/${TEST_NAME}/tcp-throughput-${buffer}.txt" ]; then
-      rm ../results/${TEST_NAME}/tcp-throughput-${buffer}.txt
-    fi
+        if [ -f "../results/${TEST_NAME}/tcp-transfer-${buffer}.txt" ]; then
+            rm ../results/${TEST_NAME}/tcp-transfer-${buffer}.txt
+        fi
 
-    if [ -f "../results/${TEST_NAME}/tcp-transfer-${buffer}.txt" ]; then
-      rm ../results/${TEST_NAME}/tcp-transfer-${buffer}.txt
-    fi
+        if [ -f "../results/${TEST_NAME}/tcp-retransmissions-${buffer}.txt" ]; then
+            rm ../results/${TEST_NAME}/tcp-retransmissions-${buffer}.txt
+        fi
 
-    if [ -f "../results/${TEST_NAME}/tcp-retransmissions-${buffer}.txt" ]; then
-      rm ../results/${TEST_NAME}/tcp-retransmissions-${buffer}.txt
-    fi
+        if [ -f "../results/${TEST_NAME}/udp-transfer-${buffer}.txt" ]; then
+            rm ../results/${TEST_NAME}/udp-transfer-${buffer}.txt
+        fi
 
-    if [ -f "../results/${TEST_NAME}/udp-transfer-${buffer}.txt" ]; then
-      rm ../results/${TEST_NAME}/udp-transfer-${buffer}.txt
-    fi
+        if [ -f "../results/${TEST_NAME}/udp-throughput-${buffer}.txt" ]; then
+            rm ../results/${TEST_NAME}/udp-throughput-${buffer}.txt
+        fi
 
-    if [ -f "../results/${TEST_NAME}/udp-throughput-${buffer}.txt" ]; then
-      rm ../results/${TEST_NAME}/udp-throughput-${buffer}.txt
-    fi
+        if [ -f "../results/${TEST_NAME}/udp-jitter-${buffer}.txt" ]; then
+            rm ../results/${TEST_NAME}/udp-jitter-${buffer}.txt
+        fi
 
-    if [ -f "../results/${TEST_NAME}/udp-jitter-${buffer}.txt" ]; then
-      rm ../results/${TEST_NAME}/udp-jitter-${buffer}.txt
-    fi
+        if [ -f "../results/${TEST_NAME}/udp-error-${buffer}.txt" ]; then
+            rm ../results/${TEST_NAME}/udp-error-${buffer}.txt
+        fi
 
-    if [ -f "../results/${TEST_NAME}/udp-error-${buffer}.txt" ]; then
-      rm ../results/${TEST_NAME}/udp-error-${buffer}.txt
-    fi
+        if [ -f "../results/${TEST_NAME}/tcp-box-plot-${buffer}.txt" ]; then
+            rm ../results/${TEST_NAME}/tcp-box-plot-${buffer}.txt
+        fi
 
-    if [ -f "../results/${TEST_NAME}/tcp-box-plot-${buffer}.txt" ]; then
-      rm ../results/${TEST_NAME}/tcp-box-plot-${buffer}.txt
-    fi
+        # We delete previous log files
+        if [ -f "../logs/${TEST_NAME}/tcp-log-${buffer}.txt" ]; then
+            rm ../logs/${TEST_NAME}/tcp-log-${buffer}.txt
+        fi
 
-    # We delete previous log files
-    if [ -f "../logs/${TEST_NAME}/tcp-log-${buffer}.txt" ]; then
-      rm ../logs/${TEST_NAME}/tcp-log-${buffer}.txt
-    fi
+        if [ -f "../logs/${TEST_NAME}/udp-log-${buffer}.txt" ]; then
+            rm ../logs/${TEST_NAME}/udp-log-${buffer}.txt
+        fi
 
-    if [ -f "../logs/${TEST_NAME}/udp-log-${buffer}.txt" ]; then
-      rm ../logs/${TEST_NAME}/udp-log-${buffer}.txt
-    fi
+        # We set the size of the kernel buffer
+        echo ""
+        echo "Setting the size of the kernel buffer"
+        echo "-------------------------------------"
 
-    # We set the buffer kernel
-    echo ""
-    echo "Setting the size of the kernel buffer"
-    echo "-------------------------------------"
+        rb_default="net.core.rmem_default"
+        rb_max="net.core.rmem_max"
 
-    rb_default="net.core.rmem_default"
-    rb_max="net.core.rmem_max"
+        wb_default="net.core.wmem_default"
+        wb_max="net.core.wmem_max"
 
-    wb_default="net.core.wmem_default"
-    wb_max="net.core.wmem_max"
+        sysctl -w "$rb_default"=$buffer
+        sysctl -w "$rb_max"=$buffer
 
-    sysctl -w "$rb_default"=$buffer
-    sysctl -w "$rb_max"=$buffer
+        sysctl -w "$wb_default"=$buffer
+        sysctl -w "$wb_max"=$buffer
 
-    sysctl -w "$wb_default"=$buffer
-    sysctl -w "$wb_max"=$buffer
+        # Convert the B in KB for better readability
+        buffer_in_kb=$(echo "scale=2; $buffer / 1024")
 
-    rmem_default=$(sysctl net.core.rmem_default)
-    rmem_max=$(sysctl net.core.rmem_max)
+        echo ""
+        echo "Kernel buffer size set to $buffer_in_kb KB"
 
-    wmem_default=$(sysctl net.core.wmem_default)
-    wmem_max=$(sysctl net.core.wmem_max)
-
-    echo ""
-    echo "Kernel buffer size set to $buffer B"
-
-    echo ""
-    echo "----------------------------------------"
-    echo "| TCP - IPERF3 - BUFFER SIZE: $buffer B |"
-    echo "----------------------------------------"
-    echo ""
-
-    # We initialize the variables
-    total_transfer_tcp=0
-    total_bitrate_tcp=0
-    total_retransmissions_tcp=0
+        echo ""
+        echo "-----------------------------------------------"
+        echo "| TCP - IPERF3 - BUFFER SIZE: $buffer_in_kb KB |"
+        echo "-----------------------------------------------"
+        echo ""
     
     # We run the TCP iperf3 test with the default options
     for i in $(seq 1 $TESTS); do

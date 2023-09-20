@@ -1,31 +1,28 @@
+#!/bin/bash
+
+source settings.sh
+
 echo ""
 echo "The main.sh script will be run in host A from the local prototype."
 echo "------------------------------------------------------------------"
 echo WARNING: Note that if you run this script, you will have to change the IP of the remote host.
 echo ""
 
-# Define the variables
-username="antonio"
-prototype_ip="161.67.133.94"
-prototype_switch="161.67.133.92"
-remote_home="/home/${username}"
-remote_results_dir="${remote_home}/results"
-remote_scripts_dir="${remote_home}/scripts"
-results_dir="../local/results/corundum"
-current_time=$(date "+%Y.%m.%d-%H.%M.%S")
-
-# Set default values for the prototype and the configuration
+# Variables
 prototype=2
 configuration=1
+current_time=$(date "+%Y.%m.%d-%H.%M.%S")
+
+# Create the remote directories where the scripts and results will be stored
+ssh ${USERNAME}@${HOST_A} "mkdir scripts"
+ssh ${USERNAME}@${HOST_A} "mkdir results"
+ssh ${USERNAME}@${SWITCH} "mkdir scripts"
 
 # Send the scripts that perform the measurments to the prototype
-ssh ${username}@${prototype_ip} "mkdir scripts"
-ssh ${username}@${prototype_ip} "mkdir results"
-scp *.tcl *.sh ${username}@${prototype_ip}:${remote_scripts_dir}
-ssh ${username}@${prototype_switch} "mkdir scripts"
-scp *.tcl *.sh ${username}@${prototype_switch}:${remote_scripts_dir}
+scp *.tcl *.sh ${USERNAME}@${HOST_A}:${REMOTE_SCRIPTS_DIR}
+scp *.tcl *.sh ${USERNAME}@${SWITCH}:${REMOTE_SCRIPTS_DIR}
 
-#read -p $'What prototype are you going to run the tests into?\n1. CELLIA prototype \n2. Local prototype\n' prototype
+read -t 10 -p $'What prototype are you going to run the tests into?\n1. CELLIA prototype \n2. Local prototype\n' prototype
 
 # CELLIA
 if [ "$prototype" -eq 1 ]; then
@@ -44,30 +41,53 @@ if [ "$prototype" -eq 1 ]; then
     fi
 fi
 
-# Local
+# Local prototype
 if [ "$prototype" -eq 2 ]; then
     echo ""
     echo "The tests will be run in the local prototype"
     echo "---------------------------------------------"
-    #read -p $'What is the prototype configuration?\n1. Host A - Switch - Host B. \n2. Host A - Host B\n' configuration
-    # Host A - Switch - Host B
+
+    # Request the user which configuration is going to be tested
+    read -t 10 -p $'What is the prototype configuration?\n1. Host A - Switch - Host B. \n2. Host A - Host B\n' configuration
+
+    # Configuration #1: Host A - Switch - Host B
     if [ "$configuration" -eq 1  ]; then
-        # We save the previous results or otherwise they will be overwritten
-        mv ${results_dir}/con-switch ${results_dir}/con-switch.$current_time
-        mkdir ${results_dir}/con-switch
-        ssh ${username}@${prototype_switch} "cd ${remote_scripts_dir} && /tools/Xilinx/Vitis/2022.2/bin/xsct reference-switch.tcl"
-        ssh ${username}@${prototype_ip} "cd ${remote_scripts_dir} && sudo ./main.sh" && scp -r ${username}@${prototype_ip}:${remote_results_dir}/* ${results_dir}/con-switch/
+        # Check if the results directory exists
+        if [ ! -d "$RESULTS_DIR/con-switch" ]; then
+            mkdir -p $RESULTS_DIR/con-switch
+        else 
+            # Save the previous results or otherwise they will be overwritten
+            mv ${RESULTS_DIR}/con-switch ${RESULTS_DIR}/con-switch.$current_time
+
+            # Program the switch
+            ssh ${USERNAME}@${SWITCH} "cd ${REMOTE_SCRIPTS_DIR} && /tools/Xilinx/Vitis/2022.2/bin/xsct reference-switch.tcl"
+
+            # Launch the tests remotely and send the results back
+            ssh ${USERNAME}@${HOST_A} "cd ${REMOTE_SCRIPTS_DIR} && sudo ./main.sh" && scp -r ${USERNAME}@${HOST_A}:${REMOTE_RESULTS_DIR}/* ${RESULTS_DIR}/con-switch/
+        fi
     fi
+
+    # Configuraion #2: Host A - Host B
     if [ "$configuration" -eq 2  ]; then
-        mv ${results_dir}/sin-switch ${results_dir}/sin-switch.$current_time
-        mkdir ${results_dir}/sin-switch
-        ssh ${username}@${prototype_ip} "cd ${remote_scripts_dir} && sudo ./main.sh" && scp -r ${username}@${prototype_ip}:${remote_results_dir}/*/ ${results_dir}/sin-switch/
+        # Check if the results directory exists
+        if [ ! -d "$RESULTS_DIR/con-switch" ]; then
+            mkdir ${RESULTS_DIR}/sin-switch
+        else 
+            # Save the previous results or otherwise they will be overwritten
+            mv ${RESULTS_DIR}/sin-switch ${RESULTS_DIR}/sin-switch.$current_time
+
+            # Launch the tests remotely and send the results back
+            ssh ${USERNAME}@${HOST_A} "cd ${REMOTE_SCRIPTS_DIR} && sudo ./main.sh" && scp -r ${USERNAME}@${HOST_A}:${REMOTE_RESULTS_DIR}/*/ ${RESULTS_DIR}/sin-switch/
+        fi
     fi
+
+    # Wrong configuration selection
     if [ "$configuration" != "1" ] && [ "$configuration" != "2" ]; then
         echo "You selected the wrong prototype. Please, type '1' (local prototype) or '2' (CELLIA prototype)."
     fi
 fi
 
+# Wrong prototype selection
 if [ "$prototype" != "1" ] && [ "$prototype" != "2" ]; then
     echo $'You selected the wrong prototype. Please, type '1' (local prototype) or '2' (CELLIA prototype).'
 fi
