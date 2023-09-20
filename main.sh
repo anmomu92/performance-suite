@@ -7,7 +7,7 @@ export HOST_B=161.67.133.93
 export SWITCH=161.67.133.92
 export SERVER_IP=192.168.0.20
 export CLIENT_IP=192.168.0.10
-export TESTS=1
+export TESTS=50
 export TEST_DURATION=10
 
 # Variables shared among different bash scripts
@@ -70,12 +70,12 @@ then
   fi
 
   if [ $test_netperf -eq 1 ]; then
-      ssh ${USERNAME}@${HOST_B} "netserver"
+      ssh -i /home/antonio/.ssh/id_ed25519 ${USERNAME}@${HOST_B} "netserver"
       ./throughput-netperf.sh
   fi
 
   if [ $test_nuttcp -eq 1 ]; then
-      ssh ${USERNAME}@${HOST_B} "nuttcp -S"
+      ssh -i /home/antonio/.ssh/id_ed25519 ${USERNAME}@${HOST_B} "nuttcp -S"
       ./throughput-nuttcp.sh
   fi
 
