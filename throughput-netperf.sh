@@ -6,7 +6,7 @@ export TEST_NAME="netperf"
 # Variables
 nperf=0
 message_size=(512 1024 2048 4096 8192 16384)
-buffer_size=(106496 212992 524288 1048576 52428800 157286400) # 104KB 208KB 512KB 1MB 50MB  150MB
+buffer_size=(212992 1048576 52428800) # 104KB 208KB 512KB 1MB 50MB  150MB
 
 
 # We create results directory if it doesn't exist

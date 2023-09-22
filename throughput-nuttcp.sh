@@ -8,7 +8,7 @@ nuttcp=0
 injection_bitrate=(100 500 1000 2000 3000 10000 0)
 packet_burst=(5 10 20 50 100 200)
 message_size=(1448 8972)
-buffer_size=(106496 212992 524288 1048576 52428800 157286400) # 104KB 208KB 512KB 1MB 50MB  150MB
+buffer_size=(212992 1048576 52428800) # 104KB 208KB 512KB 1MB 50MB  150MB
 
 # We create results directory if it doesn't exist
 if [ ! -d "../results/${TEST_NAME}" ]; then
