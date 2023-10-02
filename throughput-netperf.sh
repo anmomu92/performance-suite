@@ -27,37 +27,6 @@ if [ $nperf -eq 1 ]; then
     for buffer in "${buffer_size[@]}"; do # Buffer size
 
         ##########################################################################
-        # Delete previous result files
-        ##########################################################################
-        if [ -f "../results/${TEST_NAME}/tcp-throughput-${buffer}.txt" ]; then
-            rm ../results/${TEST_NAME}/tcp-throughput-${buffer}.txt
-        fi
-
-        if [ -f "../results/${TEST_NAME}/udp-throughput-${buffer}.txt" ]; then
-            rm ../results/${TEST_NAME}/udp-throughput-${buffer}.txt
-        fi
-
-        if [ -f "../results/${TEST_NAME}/udp-error-${buffer}.txt" ]; then
-            rm ../results/${TEST_NAME}/udp-error-${buffer}.txt
-        fi
-
-
-        if [ -f "../results/${TEST_NAME}/tcp-box-plot-${buffer}.txt" ]; then
-            rm ../results/${TEST_NAME}/tcp-box-plot-${buffer}.txt
-        fi
-
-        ##########################################################################
-        # Delete previous log files
-        ##########################################################################
-        if [ -f "../logs/${TEST_NAME}/tcp-log-${buffer}.txt" ]; then
-            rm ../logs/${TEST_NAME}/tcp-log-${buffer}.txt
-        fi
-
-        if [ -f "../logs/${TEST_NAME}/udp-log-${buffer}.txt" ]; then
-            rm ../logs/${TEST_NAME}/udp-log-${buffer}.txt
-        fi
-
-        ##########################################################################
         # Set kernel buffer
         ##########################################################################
         echo ""
@@ -95,8 +64,8 @@ if [ $nperf -eq 1 ]; then
 
         for i in $(seq 1 $TESTS); do # 50 runs
             # Save the output as a log file and extract the last line to get the results
-            netperf -H $SERVER_IP -l ${TEST_DURATION} -t TCP_STREAM -f m >> ../logs/${TEST_NAME}/tcp-log-${buffer}.txt
-            netperf_result_tcp=$(tail -1 ../logs/${TEST_NAME}/tcp-log-${buffer}.txt)
+            netperf -H $SERVER_IP -l ${TEST_DURATION} -t TCP_STREAM -f m >> ../logs/${TEST_NAME}/${TEST_NAME}-tcp-log-${buffer}.txt
+            netperf_result_tcp=$(tail -1 ../logs/${TEST_NAME}/${TEST_NAME}-tcp-log-${buffer}.txt)
 
             ##########################################################################
             # Throughput
@@ -110,10 +79,10 @@ if [ $nperf -eq 1 ]; then
             fi
 
             # Save throughput of the run into boxplot file
-            echo "$part_bitrate_tcp " >> ../results/${TEST_NAME}/tcp-box-plot-${buffer}.txt
+            echo "$part_bitrate_tcp " >> ../results/${TEST_NAME}/${TEST_NAME}-tcp-box-plot-${buffer}.txt
 
             # Print summary of the run
-            echo "RUN: $i ($buffer KB) ------- Partial bitrate: $part_bitrate_tcp Mbps"
+            echo "${TEST_NAME} TCP RUN: $i ($buffer KB) ------- Partial bitrate: $part_bitrate_tcp Mbps"
         done # 50 runs
 
         echo ""
@@ -122,8 +91,8 @@ if [ $nperf -eq 1 ]; then
         # Calculate the average throughput for TCP
         avg_bitrate_tcp=$(echo "scale=3; $total_bitrate_tcp / $TESTS" | bc -l)
         echo "The average bitrate for TCP in $TESTS runs is $avg_bitrate_tcp Mbps"
-        echo "# The average throughput after $TESTS runs is the following: " >> ../results/${TEST_NAME}/tcp-throughput-${buffer}.txt
-        echo "bitrate $avg_bitrate_tcp" >> ../results/${TEST_NAME}/tcp-throughput-${buffer}.txt
+        echo "# The average throughput after $TESTS runs is the following: " >> ../results/${TEST_NAME}/${TEST_NAME}-tcp-throughput-${buffer}.txt
+        echo "bitrate $avg_bitrate_tcp" >> ../results/${TEST_NAME}/${TEST_NAME}-tcp-throughput-${buffer}.txt
 
 
         ##########################################################################
@@ -136,29 +105,25 @@ if [ $nperf -eq 1 ]; then
         # Calculate the average UDP throughput for different message sizes 
         for size in "${message_size[@]}"; do # message size
 
-            if [ -f "../results/${TEST_NAME}/udp-box-plot-${buffer}-${size}.txt" ]; then
-                rm ../results/${TEST_NAME}/udp-box-plot-${buffer}-${size}.txt
-            fi
-
             echo ""
             echo "Message size set to $size"
             echo "-----------------------------------------------"
-            echo "------------------------------------------------------------------------------" >> ../logs/${TEST_NAME}/udp-log-${buffer}.txt
-            echo "MSG_SIZE = $size - BUFFER_SIZE = $rmem_default" >> ../results/${TEST_NAME}/udp-throughput-${buffer}.txt
-            echo "MSG_SIZE = $size - BUFFER_SIZE = $rmem_default" >> ../results/${TEST_NAME}/udp-error-${buffer}.txt
+            echo "------------------------------------------------------------------------------" >> ../logs/${TEST_NAME}/${TEST_NAME}-udp-log-${buffer}.txt
+            echo "MSG_SIZE = $size - BUFFER_SIZE = $rmem_default" >> ../results/${TEST_NAME}/${TEST_NAME}-udp-throughput-${buffer}.txt
+            echo "MSG_SIZE = $size - BUFFER_SIZE = $rmem_default" >> ../results/${TEST_NAME}/${TEST_NAME}-udp-error-${buffer}.txt
 
             # We initialize the variables
             total_bitrate_udp=0
             total_loss_udp=0
 
             for i in $(seq 1 $TESTS); do # UDP 50 runs
-                echo "RUN = $i - MSG_SIZE = $size - BUFFER_SIZE = $rmem_default" >> ../logs/${TEST_NAME}/udp-log-${buffer}.txt
+                echo "RUN = $i - MSG_SIZE = $size - BUFFER_SIZE = $rmem_default" >> ../logs/${TEST_NAME}/${TEST_NAME}-udp-log-${buffer}.txt
                 # We save the output as a log file and extract the last line to get the results
-                netperf -H ${SERVER_IP} -t UDP_STREAM -l ${TEST_DURATION} -- -m ${size} -- -f m >> ../logs/${TEST_NAME}/udp-log-${buffer}.txt
-                netperf_result_udp=$(tail -3 ../logs/${TEST_NAME}/udp-log-${buffer}.txt | head -1)
+                netperf -H ${SERVER_IP} -t UDP_STREAM -l ${TEST_DURATION} -- -m ${size} -- -f m >> ../logs/${TEST_NAME}/${TEST_NAME}-udp-log-${buffer}.txt
+                netperf_result_udp=$(tail -3 ../logs/${TEST_NAME}/${TEST_NAME}-udp-log-${buffer}.txt | head -1)
 
-                echo "------------------------------------------------------------------------------" >> ../logs/${TEST_NAME}/udp-log-${buffer}.txt
-                echo "" >> ../logs/${TEST_NAME}/udp-log-${buffer}.txt
+                echo "------------------------------------------------------------------------------" >> ../logs/${TEST_NAME}/${TEST_NAME}-udp-log-${buffer}.txt
+                echo "" >> ../logs/${TEST_NAME}/${TEST_NAME}-udp-log-${buffer}.txt
 
                 ##########################################################################
                 # Throughput
@@ -171,7 +136,7 @@ if [ $nperf -eq 1 ]; then
                     part_bitrate_udp=0
                 fi
 
-                echo "$part_bitrate_udp " >> ../results/${TEST_NAME}/udp-box-plot-${buffer}-${size}.txt
+                echo "$part_bitrate_udp " >> ../results/${TEST_NAME}/${TEST_NAME}-udp-box-plot-${buffer}-${size}.txt
 
                 ##########################################################################
                 # Errors
@@ -185,7 +150,7 @@ if [ $nperf -eq 1 ]; then
                 fi
 
                 # Print run summary
-                echo "RUN = $i ($buffer KB)------- Partial bitrate: $part_bitrate_udp Mbps - Partial loss: $part_loss_udp"
+                echo "${TEST_NAME} UDP RUN = $i ($buffer KB)------- Partial bitrate: $part_bitrate_udp Mbps - Partial loss: $part_loss_udp"
             done # 50 runs
 
             echo ""
@@ -194,12 +159,12 @@ if [ $nperf -eq 1 ]; then
             # Calculate the average throughput for UDP 
             avg_bitrate_udp=$(echo "scale=3; $total_bitrate_udp / $TESTS" | bc -l)
             echo "The average throughput for UDP in $TESTS runs and message size of $size is $avg_bitrate_udp Mbps"
-            echo "$size $avg_bitrate_udp" >> ../results/${TEST_NAME}/udp-throughput-${buffer}.txt
+            echo "$size $avg_bitrate_udp" >> ../results/${TEST_NAME}/${TEST_NAME}-udp-throughput-${buffer}.txt
 
             # Calculate the average errors for UDP 
             avg_loss_udp=$(echo "scale=3; $total_loss_udp / $TESTS" | bc -l)
             echo "The average errors for UDP in $TESTS runs and message size of $size is $avg_loss_udp"
-            echo "$size $avg_loss_udp" >> ../results/${TEST_NAME}/udp-error-${buffer}.txt
+            echo "$size $avg_loss_udp" >> ../results/${TEST_NAME}/${TEST_NAME}-udp-error-${buffer}.txt
 
         done # message size
     done # buffer

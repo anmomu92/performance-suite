@@ -26,52 +26,6 @@ iperf3 -c $SERVER_IP -B $CLIENT_IP -t 1 > /dev/null 2>&1 && ip3=1
 if [ $ip3 -eq 1 ]; then
     for buffer in "${buffer_size[@]}"; do # Buffer size
 
-        ##########################################################################
-        # Delete previous result files
-        ##########################################################################
-        if [ -f "../results/${TEST_NAME}/tcp-throughput-${buffer}.txt" ]; then
-            rm ../results/${TEST_NAME}/tcp-throughput-${buffer}.txt
-        fi
-
-        if [ -f "../results/${TEST_NAME}/tcp-transfer-${buffer}.txt" ]; then
-            rm ../results/${TEST_NAME}/tcp-transfer-${buffer}.txt
-        fi
-
-        if [ -f "../results/${TEST_NAME}/tcp-retransmissions-${buffer}.txt" ]; then
-            rm ../results/${TEST_NAME}/tcp-retransmissions-${buffer}.txt
-        fi
-
-        if [ -f "../results/${TEST_NAME}/udp-transfer-${buffer}.txt" ]; then
-            rm ../results/${TEST_NAME}/udp-transfer-${buffer}.txt
-        fi
-
-        if [ -f "../results/${TEST_NAME}/udp-throughput-${buffer}.txt" ]; then
-            rm ../results/${TEST_NAME}/udp-throughput-${buffer}.txt
-        fi
-
-        if [ -f "../results/${TEST_NAME}/udp-jitter-${buffer}.txt" ]; then
-            rm ../results/${TEST_NAME}/udp-jitter-${buffer}.txt
-        fi
-
-        if [ -f "../results/${TEST_NAME}/udp-error-${buffer}.txt" ]; then
-            rm ../results/${TEST_NAME}/udp-error-${buffer}.txt
-        fi
-
-        if [ -f "../results/${TEST_NAME}/tcp-box-plot-${buffer}.txt" ]; then
-            rm ../results/${TEST_NAME}/tcp-box-plot-${buffer}.txt
-        fi
-
-        ##########################################################################
-        # Delete previous log files
-        ##########################################################################
-        if [ -f "../logs/${TEST_NAME}/tcp-log-${buffer}.txt" ]; then
-            rm ../logs/${TEST_NAME}/tcp-log-${buffer}.txt
-        fi
-
-        if [ -f "../logs/${TEST_NAME}/udp-log-${buffer}.txt" ]; then
-            rm ../logs/${TEST_NAME}/udp-log-${buffer}.txt
-        fi
-
         # We set the size of the kernel buffer
         echo ""
         echo "Setting the size of the kernel buffer"
@@ -105,9 +59,9 @@ if [ $ip3 -eq 1 ]; then
         echo "------------------------------------------"
         echo ""
     
-        echo "iperf3 -c $SERVER_IP -B $CLIENT_IP -O1 -t${TEST_DURATION} -f m" >> ../logs/${TEST_NAME}/tcp-log-${buffer}.txt
-        echo "--------------------------------------------------------------" >> ../logs/${TEST_NAME}/tcp-log-${buffer}.txt
-        echo "" >> ../logs/${TEST_NAME}/tcp-log-${buffer}.txt
+        echo "iperf3 -c $SERVER_IP -B $CLIENT_IP -O1 -t${TEST_DURATION} -f m" >> ../logs/${TEST_NAME}/${TEST_NAME}-tcp-log-${buffer}.txt
+        echo "--------------------------------------------------------------" >> ../logs/${TEST_NAME}/${TEST_NAME}-tcp-log-${buffer}.txt
+        echo "" >> ../logs/${TEST_NAME}/${TEST_NAME}-tcp-log-${buffer}.txt
 
 
         # Initialize the variables
@@ -119,11 +73,9 @@ if [ $ip3 -eq 1 ]; then
         for i in $(seq 1 $TESTS); do # TCP 50 runs
           
             # We send the output to a log file
-            iperf3 -c $SERVER_IP -B $CLIENT_IP -O1 -t${TEST_DURATION} -f m >> ../logs/${TEST_NAME}/tcp-log-${buffer}.txt
-            #iperf3_result_tcp_sender=$(tail -4 ../logs/${TEST_NAME}/tcp-log-${buffer}.txt | head -1)
-            #iperf3_result_tcp_receiver=$(tail -3 ../logs/${TEST_NAME}/tcp-log-${buffer}.txt | head -1)
-            iperf3_result_tcp_sender=$(tac ../logs/${TEST_NAME}/tcp-log-${buffer}.txt | grep sender | head -1)
-            iperf3_result_tcp_receiver=$(tac ../logs/${TEST_NAME}/tcp-log-${buffer}.txt | grep receiver | head -1)
+            iperf3 -c $SERVER_IP -B $CLIENT_IP -O1 -t${TEST_DURATION} -f m >> ../logs/${TEST_NAME}/${TEST_NAME}-tcp-log-${buffer}.txt
+            iperf3_result_tcp_sender=$(tac ../logs/${TEST_NAME}/${TEST_NAME}-tcp-log-${buffer}.txt | grep sender | head -1)
+            iperf3_result_tcp_receiver=$(tac ../logs/${TEST_NAME}/${TEST_NAME}-tcp-log-${buffer}.txt | grep receiver | head -1)
 
             ##########################################################################
             # Transfered bytes
@@ -150,7 +102,7 @@ if [ $ip3 -eq 1 ]; then
             fi
 
             # Add data to the boxplot text file
-            echo "$part_bitrate_tcp " >> ../results/${TEST_NAME}/tcp-box-plot-${buffer}.txt
+            echo "$part_bitrate_tcp " >> ../results/${TEST_NAME}/${TEST_NAME}-tcp-box-plot-${buffer}.txt
           
             ##########################################################################
             # Retransmissions
@@ -164,7 +116,7 @@ if [ $ip3 -eq 1 ]; then
             fi
 
             # Print results of the run in standard output
-            echo "RUN: $i ($buffer KB)------- Partial transfered data: $part_transfer_tcp $units_transfer_tcp - Partial bitrate: $part_bitrate_tcp $units_bitrate_tcp - Partial retransmissions: $part_retransmissions_tcp"
+            echo "${TEST_NAME} TCP RUN: $i ($buffer KB)------- Partial transfered data: $part_transfer_tcp $units_transfer_tcp - Partial bitrate: $part_bitrate_tcp $units_bitrate_tcp - Partial retransmissions: $part_retransmissions_tcp"
 
         done # TCP 50 runs
 
@@ -174,20 +126,20 @@ if [ $ip3 -eq 1 ]; then
         echo "---------------------"
         avg_transfer_tcp=$(echo "scale=3; $total_transfer_tcp / $TESTS" | bc -l)
         echo "The average transfer for TCP in $TESTS runs is $avg_transfer_tcp $units_transfer_tcp"
-        echo "# The average transfer after $TESTS runs is the following: " >> ../results/${TEST_NAME}/tcp-transfer-${buffer}.txt
-        echo "$avg_transfer_tcp" >> ../results/${TEST_NAME}/tcp-transfer-${buffer}.txt
+        echo "# The average transfer after $TESTS runs is the following: " >> ../results/${TEST_NAME}/${TEST_NAME}-tcp-transfer-${buffer}.txt
+        echo "$avg_transfer_tcp" >> ../results/${TEST_NAME}/${TEST_NAME}-tcp-transfer-${buffer}.txt
 
         # Calculate the average bitrate for TCP
         avg_bitrate_tcp=$(echo "scale=3; $total_bitrate_tcp / $TESTS" | bc -l)
         echo "The average bitrate for TCP in $TESTS runs is $avg_bitrate_tcp $units_bitrate_tcp"
-        echo "# The average bitrate after $TESTS runs is the following: " >> ../results/${TEST_NAME}/tcp-throughput-${buffer}.txt
-        echo "$avg_bitrate_tcp" >> ../results/${TEST_NAME}/tcp-throughput-${buffer}.txt
+        echo "# The average bitrate after $TESTS runs is the following: " >> ../results/${TEST_NAME}/${TEST_NAME}-tcp-throughput-${buffer}.txt
+        echo "$avg_bitrate_tcp" >> ../results/${TEST_NAME}/${TEST_NAME}-jtcp-throughput-${buffer}.txt
 
         # Calculate the average bitrate for TCP
         avg_retransmissions_tcp=$(echo "scale=3; $total_retransmissions_tcp / $TESTS" | bc -l)
         echo "The average retransmissions for TCP in $TESTS runs is $avg_retransmissions_tcp"
-        echo "# The average number of retransmissions after $TESTS runs is the following: " >> ../results/${TEST_NAME}/tcp-retransmissions-${buffer}.txt
-        echo "$avg_retransmissions_tcp" >> ../results/${TEST_NAME}/tcp-retransmissions-${buffer}.txt
+        echo "# The average number of retransmissions after $TESTS runs is the following: " >> ../results/${TEST_NAME}/${TEST_NAME}-tcp-retransmissions-${buffer}.txt
+        echo "$avg_retransmissions_tcp" >> ../results/${TEST_NAME}/${TEST_NAME}-tcp-retransmissions-${buffer}.txt
 
 
         ##########################################################################
@@ -201,15 +153,6 @@ if [ $ip3 -eq 1 ]; then
         # Run the UDP iperf3 varying the injection bitrate
         for bitrate in "${injection_bitrate[@]}"; do # bitrate
 
-            # Remove the results and logs from previous runs
-            if [ -f "../results/${TEST_NAME}/udp-box-plot-${buffer}-${bitrate}.txt" ]; then
-                rm ../results/${TEST_NAME}/udp-box-plot-${buffer}-${bitrate}.txt
-            fi
-
-            if [ -f "../logs/${TEST_NAME}/udp-log-${buffer}-${bitrate}.txt" ]; then
-                rm ../logs/${TEST_NAME}/udp-log-${buffer}-${bitrate}.txt
-            fi
-
             # Initialize the variables
             total_transfer_udp=0
             total_bitrate_udp=0
@@ -219,25 +162,25 @@ if [ $ip3 -eq 1 ]; then
             echo ""
             echo "Injection bitrate set to ${bitrate} Mbps"
             echo "-----------------------------------------------"
-            echo "# INJ BITRATE: $bitrate Mbps - BUFFER SIZE: $buffer KB" >> ../results/${TEST_NAME}/udp-throughput-${buffer}.txt
-            echo "# INJ BITRATE: $bitrate Mbps - BUFFER SIZE: $buffer KB" >> ../results/${TEST_NAME}/udp-transfer-${buffer}.txt
-            echo "# INJ BITRATE: $bitrate Mbps - BUFFER SIZE: $buffer KB" >> ../results/${TEST_NAME}/udp-jitter-${buffer}.txt
-            echo "# INJ BITRATE: $bitrate Mbps - BUFFER SIZE: $buffer KB" >> ../results/${TEST_NAME}/udp-loss-${buffer}.txt
+            echo "# INJ BITRATE: $bitrate Mbps - BUFFER SIZE: $buffer KB" >> ../results/${TEST_NAME}/${TEST_NAME}-udp-throughput-${buffer}.txt
+            echo "# INJ BITRATE: $bitrate Mbps - BUFFER SIZE: $buffer KB" >> ../results/${TEST_NAME}/${TEST_NAME}-udp-transfer-${buffer}.txt
+            echo "# INJ BITRATE: $bitrate Mbps - BUFFER SIZE: $buffer KB" >> ../results/${TEST_NAME}/${TEST_NAME}-udp-jitter-${buffer}.txt
+            echo "# INJ BITRATE: $bitrate Mbps - BUFFER SIZE: $buffer KB" >> ../results/${TEST_NAME}/${TEST_NAME}-udp-loss-${buffer}.txt
 
 
             for i in $(seq 1 $TESTS); do # UDP 50 runs
-                echo "RUN: $i - INJ BITRATE: $bitrate Mbps - BUFFER SIZE: $buffer KB" >> ../logs/${TEST_NAME}/udp-log-${buffer}-${bitrate}.txt
+                echo "RUN: $i - INJ BITRATE: $bitrate Mbps - BUFFER SIZE: $buffer KB" >> ../logs/${TEST_NAME}/${TEST_NAME}-udp-log-${buffer}-${bitrate}.txt
 
                 # We save the output as a log file
-                echo "iperf3 -c $SERVER_IP -B $CLIENT_IP -u -b${bitrate}M -O1 -t${TEST_DURATION}" -f m >> ../logs/${TEST_NAME}/udp-log-${buffer}-${bitrate}.txt
-                iperf3 -c $SERVER_IP -B $CLIENT_IP -u -b${bitrate}M -O1 -t${TEST_DURATION} -f m >> ../logs/${TEST_NAME}/udp-log-${buffer}-${bitrate}.txt
+                echo "iperf3 -c $SERVER_IP -B $CLIENT_IP -u -b${bitrate}M -O1 -t${TEST_DURATION}" -f m >> ../logs/${TEST_NAME}/${TEST_NAME}-udp-log-${buffer}-${bitrate}.txt
+                iperf3 -c $SERVER_IP -B $CLIENT_IP -u -b${bitrate}M -O1 -t${TEST_DURATION} -f m >> ../logs/${TEST_NAME}/${TEST_NAME}-udp-log-${buffer}-${bitrate}.txt
 
-                echo "------------------------------------------------------------------------------" >> ../logs/${TEST_NAME}/udp-log-${buffer}-${bitrate}.txt
-                echo "" >> ../logs/${TEST_NAME}/udp-log-${buffer}-${bitrate}.txt
+                echo "------------------------------------------------------------------------------" >> ../logs/${TEST_NAME}/${TEST_NAME}-udp-log-${buffer}-${bitrate}.txt
+                echo "" >> ../logs/${TEST_NAME}/${TEST_NAME}-udp-log-${buffer}-${bitrate}.txt
 
                 # Get the relevant line from the output
                 #iperf3_result_udp=$(tail -4 ../logs/${TEST_NAME}/udp-log-${buffer}-${bitrate}.txt | head -1)
-                iperf3_result_udp=$(tac ../logs/${TEST_NAME}/udp-log-${buffer}-${bitrate}.txt | grep receiver | head -1)
+                iperf3_result_udp=$(tac ../logs/${TEST_NAME}/${TEST_NAME}-udp-log-${buffer}-${bitrate}.txt | grep receiver | head -1)
 
                 ##########################################################################
                 # Transfered bytes
@@ -264,7 +207,7 @@ if [ $ip3 -eq 1 ]; then
                 fi
 
                 # Append the throughput result of the run into the corresponding file
-                echo "$part_bitrate_udp " >> ../results/${TEST_NAME}/udp-box-plot-${buffer}-${bitrate}.txt
+                echo "$part_bitrate_udp " >> ../results/${TEST_NAME}/${TEST_NAME}-udp-box-plot-${buffer}-${bitrate}.txt
 
                 ##########################################################################
                 # Jitter 
@@ -291,7 +234,7 @@ if [ $ip3 -eq 1 ]; then
                 fi
 
                 # Print run results in standard output
-               echo "RUN: $i ($buffer KB) ------- Partial bitrate: $part_bitrate_udp $units_bitrate_udp - Partial jitter: $part_jitter_udp $units_jitter_udp - Partial loss: $part_loss_udp %"
+               echo "${TEST_NAME} UDP RUN: $i ($buffer KB) ------- Partial bitrate: $part_bitrate_udp $units_bitrate_udp - Partial jitter: $part_jitter_udp $units_jitter_udp - Partial loss: $part_loss_udp %"
             done # UDP 50 runs
 
             echo ""
@@ -300,22 +243,22 @@ if [ $ip3 -eq 1 ]; then
             # We calculate the average UDP transfer
             avg_transfer_udp=$(echo "scale=3; $total_transfer_udp / $TESTS" | bc -l)
             echo "The average transfer for UDP in $TESTS runs and injection bitrate of $bitrate Mbps is $avg_transfer_udp $units_transfer_udp"
-            echo "$bitrate $avg_transfer_udp" >> ../results/${TEST_NAME}/udp-transfer-${buffer}.txt
+            echo "$bitrate $avg_transfer_udp" >> ../results/${TEST_NAME}/${TEST_NAME}-udp-transfer-${buffer}.txt
 
             # We calculate the average UDP bitrate 
             avg_bitrate_udp=$(echo "scale=3; $total_bitrate_udp / $TESTS" | bc -l)
             echo "The average bitrate for UDP in $TESTS runs and injection bitrate of $bitrate is $avg_bitrate_udp $units_bitrate_udp"
-            echo "$bitrate $avg_bitrate_udp" >> ../results/${TEST_NAME}/udp-throughput-${buffer}.txt
+            echo "$bitrate $avg_bitrate_udp" >> ../results/${TEST_NAME}/${TEST_NAME}-udp-throughput-${buffer}.txt
 
             # We calculate the average UDP jitter
             avg_jitter_udp=$(echo "scale=3; $total_jitter_udp / $TESTS" | bc -l)
             echo "The average jitter for UDP in $TESTS runs and injection bitrate of $bitrate is $avg_jitter_udp $units_jitter_udp"
-            echo "$bitrate $avg_jitter_udp" >> ../results/${TEST_NAME}/udp-jitter-${buffer}.txt
+            echo "$bitrate $avg_jitter_udp" >> ../results/${TEST_NAME}/${TEST_NAME}-udp-jitter-${buffer}.txt
 
             # We calculate the average UDP datagram loss
             avg_loss_udp=$(echo "scale=3; $total_loss_udp / $TESTS" | bc -l)
             echo "The average datagram loss for UDP in $TESTS runs and injection bitrate of $bitrate is $avg_loss_udp %"
-            echo "$bitrate $avg_loss_udp" >> ../results/${TEST_NAME}/udp-loss-${buffer}.txt
+            echo "$bitrate $avg_loss_udp" >> ../results/${TEST_NAME}/${TEST_NAME}-udp-loss-${buffer}.txt
 
         done # bitrate
     done # buffer
