@@ -61,6 +61,7 @@ if [ $nuttcp -eq 1 ]; then
         echo "----------------------------------------"
 
         # Initialize the variables
+        total_transfer_tcp=0
         total_latency_tcp=0
         total_bitrate_tcp=0
         total_retransmissions_tcp=0
@@ -70,18 +71,22 @@ if [ $nuttcp -eq 1 ]; then
             # Save the output as a log file and extract the last line to get the results
             echo "nuttcp -i1 -T ${TEST_DURATION} $SERVER_IP" >> ../logs/${TEST_NAME}/${TEST_NAME}-tcp-log-${buffer}.txt
             nuttcp -i1 -T ${TEST_DURATION} $SERVER_IP >> ../logs/${TEST_NAME}/${TEST_NAME}-tcp-log-${buffer}.txt
-            echo "------------------------------------------------------------------------------" >> ../logs/${TEST_NAME}/${TEST_NAME}-tcp-log-${buffer}.txt
-            echo "" >> ../logs/${TEST_NAME}/${TEST_NAME}-tcp-log-${buffer}.txt
-            
             # Retrieve the output line with the data
             nuttcp_result_tcp=$(tail -1 ../logs/${TEST_NAME}/${TEST_NAME}-tcp-log-${buffer}.txt)
+
+            echo "------------------------------------------------------------------------------" >> ../logs/${TEST_NAME}/${TEST_NAME}-tcp-log-${buffer}.txt
+            echo "" >> ../logs/${TEST_NAME}/${TEST_NAME}-tcp-log-${buffer}.txt
+
+            echo ""
+            echo "NUTTCP UDP RESULT OUTPUT IS: $nuttcp_result_tcp"
+            echo ""
 
             ##########################################################################
             # Transfered bytes
             ##########################################################################
             part_transfer_tcp=$(echo $nuttcp_result_tcp | awk '{print $1}')
             units_transfer_tcp=$(echo $nuttcp_result_tcp | awk '{print $2}')
-                total_transfer_tcp=$(echo $total_transfer_tcp + $part_transfer_tcp | bc)
+            total_transfer_tcp=$(echo $total_transfer_tcp + $part_transfer_tcp | bc)
 
             ##########################################################################
             # Throughput

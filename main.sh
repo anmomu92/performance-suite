@@ -51,12 +51,8 @@ if [ $success -eq 1 ]; then
     # iperf3
     if [ "$test_iperf3" -eq 1 ]; then
 
-        #echo "$configuration"
-        # Check configuration
-        #if [ $configuration -eq 1 ]; then
-            # Program the switch
-            ssh -i "${SSH_KEY_SWITCH}" "${USERNAME}"@"${SWITCH}" "cd ${REMOTE_SCRIPTS_DIR} && /tools/Xilinx/Vitis/2022.2/bin/xsct reference-switch.tcl" 
-        #fi
+        # Configure switch
+        ssh -i "${SSH_KEY_SWITCH}" "${USERNAME}"@"${SWITCH}" "cd ${REMOTE_SCRIPTS_DIR} && /tools/Xilinx/Vitis/2022.2/bin/xsct reference-switch.tcl" 
 
         # Launch the iperf3 server in the prototype
         ssh -i "${SSH_KEY_HOSTB}" "${USERNAME}"@"${HOST_B}" "iperf3 -s -B ${SERVER_IP} &"
@@ -66,11 +62,8 @@ if [ $success -eq 1 ]; then
     # netperf
     if [ "$test_netperf" -eq 1 ]; then
 
-        # Check configuration
-        #if [ $configuration -eq 1 ]; then
-            # Program the switch
-            #ssh -i "${SSH_KEY_SWITCH}" "${USERNAME}"@"${SWITCH}" "cd ${REMOTE_SCRIPTS_DIR} && /tools/Xilinx/Vitis/2022.2/bin/xsct reference-switch.tcl" 
-        #fi
+        # Configure switch
+        ssh -i "${SSH_KEY_SWITCH}" "${USERNAME}"@"${SWITCH}" "cd ${REMOTE_SCRIPTS_DIR} && /tools/Xilinx/Vitis/2022.2/bin/xsct reference-switch.tcl" 
 
         # Launch the netperf server in the prototype
         ssh -i ${SSH_KEY_HOSTB} ${USERNAME}@${HOST_B} "netserver"
@@ -80,11 +73,8 @@ if [ $success -eq 1 ]; then
     # nuttcp
     if [ "$test_nuttcp" -eq 1 ]; then
 
-        # Check configuration
-        #if [ $configuration -eq 1 ]; then
-            # Program the switch
-            #ssh -i "${SSH_KEY_SWITCH}" "${USERNAME}"@"${SWITCH}" "cd ${REMOTE_SCRIPTS_DIR} && /tools/Xilinx/Vitis/2022.2/bin/xsct reference-switch.tcl" 
-        #fi
+        # Configure switch
+        ssh -i "${SSH_KEY_SWITCH}" "${USERNAME}"@"${SWITCH}" "cd ${REMOTE_SCRIPTS_DIR} && /tools/Xilinx/Vitis/2022.2/bin/xsct reference-switch.tcl" 
 
         # Launch the nuttcp server in the prototype
         ssh -i ${SSH_KEY_HOSTB} ${USERNAME}@${HOST_B} "nuttcp -S"

@@ -19,8 +19,8 @@ export RESULTS_DIR="../local/results/corundum"
 # Variables to set the tests
 export SERVER_IP=192.168.0.20
 export CLIENT_IP=192.168.0.10
-export TESTS=2
-export TEST_DURATION=1
+export TESTS=20
+export TEST_DURATION=10
 
 ###################################
 # Variables
@@ -33,4 +33,3 @@ message_size=(512 1024 2048 4096 8192 16384)
 
 # Set to 1 if there is connection when using the tool
 success=0
-

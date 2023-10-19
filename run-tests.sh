@@ -9,8 +9,6 @@ echo WARNING: Note that if you run this script, you will have to change the IP o
 echo ""
 
 # Variables
-prototype=2
-configuration=1
 current_time=$(date "+%Y.%m.%d-%H.%M.%S")
 
 # Create the remote directories where the scripts and results will be stored
@@ -27,6 +25,7 @@ echo ""
 scp *.tcl *.sh ${USERNAME}@${SWITCH}:${REMOTE_SCRIPTS_DIR} && echo ""; echo "FILES COPIED SUCCESSFULLY TO SWITCH"; echo "-----------------------------------------"
 echo ""
 
+# Ask for the prototype where the tests will be performed
 read -t 10 -p $'What prototype are you going to run the tests into?\n1. CELLIA prototype \n2. Local prototype\n' prototype
 
 # Default value
@@ -64,11 +63,11 @@ if [ "$prototype" -eq 2 ]; then
     
     # Default value
     if [ $? != 0 ]; then
-        configuration=1
+        configuration=3
     fi
 
     # Configuration #1: Host A - Host B
-    if [ "$configuration" -eq 1  ]; then
+    if [ "$configuration" -eq 1 ]; then
         echo ""
         echo "The tests will be run using configuration 1: HA - HB"
         echo "----------------------------------------------------"
@@ -87,8 +86,8 @@ if [ "$prototype" -eq 2 ]; then
         ssh ${USERNAME}@${HOST_A} "cd ${REMOTE_SCRIPTS_DIR} && source settings.sh && sudo ./main.sh" && scp -r ${USERNAME}@${HOST_A}:${REMOTE_RESULTS_DIR}/*/ ${RESULTS_DIR}/sin-switch/
     fi
 
-    # Configuraion #2: Host A - Switch - Host B
-    if [ "$configuration" -eq 2  ]; then
+    # Configuration #2: Host A - Switch - Host B
+    if [ "$configuration" -eq 2 ]; then
         echo ""
         echo "The tests will be run using configuration 2: HA - SW - HB"
         echo "---------------------------------------------------------"
@@ -103,13 +102,34 @@ if [ "$prototype" -eq 2 ]; then
             mv ${RESULTS_DIR}/con-switch ${RESULTS_DIR}/archive/con-switch.$current_time
             mkdir -p $RESULTS_DIR/con-switch
         fi
-
+        
         # Launch the tests remotely and send the results back
         ssh ${USERNAME}@${HOST_A} "cd ${REMOTE_SCRIPTS_DIR} && source settings.sh && sudo ./main.sh" && scp -r ${USERNAME}@${HOST_A}:${REMOTE_RESULTS_DIR}/* ${RESULTS_DIR}/con-switch/
     fi
 
+    # Configuration #3: Host A - Switch - Host B
+    if [ "$configuration" -eq 3 ]; then
+        echo ""
+        echo "You will have to store the results manually, as no configuration was indicated"
+        echo "------------------------------------------------------------------------------"
+        echo ""
+        ssh ${USERNAME}@${SWITCH} "cd ${REMOTE_SCRIPTS_DIR} && /tools/Xilinx/Vitis/2022.2/bin/xsct reference-switch.tcl"
+        # Check if the results directory exists
+        if [ ! -d "$RESULTS_DIR/con-switch" ]; then
+            mkdir -p $RESULTS_DIR/unknown-configuration
+        else
+            mkdir ${RESULTS_DIR}/archive
+            # Save the previous results or otherwise they will be overwritten
+            mv ${RESULTS_DIR}/unknown-configuration ${RESULTS_DIR}/archive/unknown-configuration.$current_time
+            mkdir -p $RESULTS_DIR/unknown-configuration
+        fi
+        
+        # Launch the tests remotely and send the results back
+        ssh ${USERNAME}@${HOST_A} "cd ${REMOTE_SCRIPTS_DIR} && source settings.sh && sudo ./main.sh" && scp -r ${USERNAME}@${HOST_A}:${REMOTE_RESULTS_DIR}/* ${RESULTS_DIR}/unknown-configuration
+    fi
+
     # Wrong configuration selection
-    if [ "$configuration" != "1" ] && [ "$configuration" != "2" ]; then
+    if [ "$configuration" != "1" ] && [ "$configuration" != "2" ] && [ "$configuration" != "3" ]; then
         echo "You selected the wrong prototype. Please, type '1' (local prototype) or '2' (CELLIA prototype)."
     fi
 fi
@@ -118,4 +138,3 @@ fi
 if [ "$prototype" != "1" ] && [ "$prototype" != "2" ]; then
     echo $'You selected the wrong prototype. Please, type '1' (local prototype) or '2' (CELLIA prototype).'
 fi
-
